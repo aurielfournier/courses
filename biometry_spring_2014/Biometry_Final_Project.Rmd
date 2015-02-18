@@ -1,0 +1,1155 @@
+# Effects of Wetland Impoundment Management and Vegetation Community on Sora Density in Missouri During Fall Migration
+# Set Up
+```{r, warning=FALSE, message=FALSE}
+setwd("~/Dropbox/R/Distance")
+
+#load required libraries
+library(unmarked)
+library(AICcmodavg)
+library(ggplot2)
+library(reshape2)
+library(lattice)
+library(sjPlot) 
+library(grid)
+
+```
+# 2012 Round 2
+```{r, warning=FALSE, message=FALSE}
+#read in the sora observations
+sora12r2 <- as.matrix(read.csv('2012r2_sora.csv', header=T))
+#read in the covariate data #organized by impoundment.
+cov12r2 <- read.csv('2012r2_cov.csv', header=T)
+#subset just the covariates we need 
+cov12r2 <- cov12r2[,c("habtype","region","dua","dista","int","effortm","waterd")]
+
+cutpt = as.numeric(c(0,1,2,3,4,5,6,7,8,9,10,11,12)) #the fartherest distance is 12
+
+#Unmarked Data Frame
+umf12r2 = unmarkedFrameGDS(y=sora12r2, 
+                           numPrimary=3,
+                           siteCovs = cov12r2,
+                           survey="line", 
+                           dist.breaks=cutpt,  
+                           unitsIn="m", 
+                           tlength=cov12r2$effortm,
+)
+
+##candidate models 
+null12r2 = gdistsamp(lambdaformula = ~1,
+                     phiformula = ~1, 
+                     pformula = ~1, 
+                     data = umf12r2, keyfun = "hazard",
+                     mixture="NB",
+                     se = T)
+
+global12r2 = gdistsamp(lambdaformula = ~habtype+int+waterd+dua+dista+region-1, 
+                       phiformula = ~1,
+                       pformula = ~  1, 
+                       data = umf12r2, 
+                       keyfun = "hazard", 
+                       mixture="NB",
+                       se = T)
+
+a12r2 = gdistsamp(lambdaformula = ~int-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf12r2, keyfun = "hazard", mixture="NB",se = T)
+
+b12r2 = gdistsamp(lambdaformula = ~waterd-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf12r2, keyfun = "hazard", mixture="NB",se = T)
+ 
+c12r2 = gdistsamp(lambdaformula = ~habtype-1, 
+                   phiformula = ~1, 
+                   pformula = ~  1,
+                   data = umf12r2, keyfun = "hazard", mixture="NB",se = T)
+ 
+d12r2 = gdistsamp(lambdaformula = ~dua-1, 
+                   phiformula = ~1, 
+                   pformula = ~  1,
+                   data = umf12r2, keyfun = "hazard", mixture="NB",se = T)
+
+e12r2 = gdistsamp(lambdaformula = ~region-1, 
+                  phiformula = ~1, 
+                  pformula = ~ 1,
+                  data = umf12r2, keyfun = "hazard", mixture="NB",se = T)
+
+f12r2 = gdistsamp(lambdaformula = ~dista- 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf12r2, keyfun = "hazard", mixture = "NB", se = T)
+
+g12r2 = gdistsamp(lambdaformula = ~habtype + int - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf12r2, keyfun = "hazard", mixture = "NB", se = T)
+
+h12r2 = gdistsamp(lambdaformula = ~habtype + int + waterd - 1, 
+                   phiformula = ~1, 
+                   pformula = ~  1, 
+                   data = umf12r2, keyfun = "hazard", mixture = "NB", se = T)
+
+i12r2 = gdistsamp(lambdaformula = ~habtype + waterd - 1, 
+                   phiformula = ~1, 
+                   pformula = ~  1, 
+                   data = umf12r2, keyfun = "hazard", mixture = "NB", se = T)
+
+j12r2 = gdistsamp(lambdaformula = ~habtype + dua - 1, 
+                   phiformula = ~1, 
+                   pformula = ~  1, 
+                   data = umf12r2, keyfun = "hazard", mixture = "NB", se = T)
+
+k12r2 = gdistsamp(lambdaformula = ~habtype + region - 1, 
+                   phiformula = ~1, 
+                   pformula = ~  1, 
+                   data = umf12r2, keyfun = "hazard", mixture = "NB", se = T)
+
+l12r2 = gdistsamp(lambdaformula = ~habtype + dista - 1, 
+                   phiformula = ~1, 
+                   pformula = ~  1, 
+                   data = umf12r2, keyfun = "hazard", mixture = "NB", se = T)
+
+m12r2 = gdistsamp(lambdaformula = ~habtype + region + int - 1, 
+                   phiformula = ~1, 
+                   pformula = ~  1, 
+                   data = umf12r2, keyfun = "hazard", mixture = "NB", se = T)
+
+
+list12r2 = fitList(null12r2, global12r2, a12r2, b12r2, c12r2, d12r2, e12r2, f12r2, g12r2, h12r2, i12r2,j12r2,k12r2,l12r2, m12r2)
+model12r2 = modSel(list12r2)
+```
+# 2012 Round 3
+```{r, warning=FALSE, message=FALSE}
+#read in the sora observations
+sora12r3 <- read.csv('2012r3_sora.csv', header=T)
+#read in the covariate data #organized by impoundment.
+cov12r3 <- read.csv('2012r3_cov.csv', header=T)
+#subset the covariates we need
+cov12r3 <- cov12r3[,c("habtype","region","dua","dista","int","effortm","waterd")]
+#the distance bins
+cutpt = as.numeric(c(0,1,2,3,4,5,6,7,8,9,10,11,12)) #the fartherest distance is 12
+#Unmarked Data Frame
+umf12r3 = unmarkedFrameGDS(y=sora12r3, 
+                           numPrimary=3,
+                           siteCovs = cov12r3,
+                           survey="line", 
+                           dist.breaks=cutpt,  
+                           unitsIn="m", 
+                           tlength=cov12r3$effortm,
+)
+
+null12r3 = gdistsamp(lambdaformula = ~1,
+                     phiformula = ~1, 
+                     pformula = ~ 1, 
+                     data = umf12r3, keyfun = "hazard", mixture="NB",se = T)
+
+global12r3 = gdistsamp(lambdaformula = ~int+waterd+region+dua+dista-1, #habtype removed because there is only one habitat type 
+
+                       phiformula = ~1,
+                       pformula = ~ 1, 
+                       data = umf12r3, keyfun = "hazard", mixture="NB",se = T)
+
+a12r3 = gdistsamp(lambdaformula = ~int-1, 
+                  phiformula = ~1, 
+                  pformula = ~ 1,
+                  data = umf12r3, keyfun = "hazard", mixture="NB",se = T)
+
+
+b12r3 = gdistsamp(lambdaformula = ~waterd-1, 
+                  phiformula = ~1, 
+                  pformula = ~ 1,
+                  data = umf12r3, keyfun = "hazard", mixture="NB",se = T)
+
+
+#c12r3 = gdistsamp(lambdaformula = ~habtype-1, 
+#                  phiformula = ~1, 
+#                  pformula = ~ 1,
+#                  data = umf12r3, keyfun = "hazard", mixture="NB",se = T)
+#model c is not considered for this round because there is only one level in this round
+
+d12r3 = gdistsamp(lambdaformula = ~dua-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf12r3, keyfun = "hazard", mixture="NB",se = T)
+
+
+e12r3 = gdistsamp(lambdaformula = ~region - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf12r3, keyfun = "hazard", mixture = "NB", se = T)
+
+f12r3 = gdistsamp(lambdaformula = ~dista - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf12r3, keyfun = "hazard", mixture = "NB", se = T)
+
+#g12r3 = gdistsamp(lambdaformula = ~habtype + int - 1, 
+#                  phiformula = ~1, 
+#                  pformula = ~  1, 
+#                  data = umf12r3, keyfun = "hazard", mixture = "NB", se = T)
+
+h12r3 = gdistsamp(lambdaformula = ~int + waterd - 1, #habtype removed from model h because there is only one level
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf12r3, keyfun = "hazard", mixture = "NB", se = T)
+
+#i12r3 = gdistsamp(lambdaformula = ~habtype + waterd - 1, 
+#                  phiformula = ~1, 
+#                  pformula = ~  1, 
+#                  data = umf12r3, keyfun = "hazard", mixture = "NB", se = T)
+
+#j12r3 = gdistsamp(lambdaformula = ~habtype + dua - 1, 
+#                  phiformula = ~1, 
+#                  pformula = ~  1, 
+#                  data = umf12r3, keyfun = "hazard", mixture = "NB", se = T)
+
+#k12r3 = gdistsamp(lambdaformula = ~habtype + region - 1, 
+#                  phiformula = ~1, 
+#                  pformula = ~  1, 
+#                  data = umf12r3, keyfun = "hazard", mixture = "NB", se = T)
+
+#l12r3 = gdistsamp(lambdaformula = ~habtype + dista - 1, 
+#                  phiformula = ~1, 
+#                  pformula = ~  1, 
+#                  data = umf12r3, keyfun = "hazard", mixture = "NB", se = T)
+
+m12r3 = gdistsamp(lambdaformula = ~region + int - 1, 
+                   phiformula = ~1, 
+                   pformula = ~  1, 
+                   data = umf12r3, keyfun = "hazard", mixture = "NB", se = T)
+
+list12r3 = fitList(null12r3, global12r3, a12r3, b12r3, d12r3,e12r3, f12r3,h12r3,m12r3)
+model12r3 = modSel(list12r3)
+```
+# 2013 Round 1
+```{r, warning=FALSE, message=FALSE}
+#read in sora data
+sora13r1 <- as.matrix(read.csv('2013r1_sora.csv', header=T))
+#read in the covariate data #organized by impoundment.
+cov13r1 <- read.csv('2013r1_cov.csv', header=T)
+#subset the covariates we need
+cov13r1 <- cov13r1[,c("habtype","region","dua","dista","int","effortm","waterd")]
+#drop upland units, since there aren't enough of them
+cov13r1 <- subset(cov13r1, cov13r1$habtype=="ms"|cov13r1$habtype=="pe")
+#the distance bins
+cutpt = as.numeric(c(0,1,2,3,4,5,6,7,8,9,10,11,12)) #the fartherest distance is 12
+#Unmarked Data Frame
+umf13r1 = unmarkedFrameGDS(y=sora13r1, 
+                           numPrimary=8,
+                           siteCovs = cov13r1,
+                           survey="line", 
+                           dist.breaks=cutpt,  
+                           unitsIn="m", 
+                           tlength=cov13r1$effortm,
+)
+
+null13r1 = gdistsamp(lambdaformula = ~1,
+                     phiformula = ~1, 
+                     pformula = ~ 1, 
+                     data = umf13r1, keyfun = "hazard", mixture="NB",se = T
+)
+
+global13r1 = gdistsamp(lambdaformula = ~int+waterd+dua+region+dista+habtype-1, 
+                       phiformula = ~1,
+                       pformula = ~  1, 
+                       data = umf13r1, keyfun = "hazard", mixture="NB",se = T)
+
+a13r1 = gdistsamp(lambdaformula = ~int-1, 
+                  phiformula = ~1, 
+                  pformula = ~ 1,
+                  data = umf13r1, keyfun = "hazard", mixture="NB",se = T)
+
+b13r1 = gdistsamp(lambdaformula = ~waterd-1, 
+                  phiformula = ~1, 
+                  pformula = ~ 1,
+                  data = umf13r1, keyfun = "hazard", mixture="NB",se = T)
+
+c13r1 = gdistsamp(lambdaformula = ~habtype-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf13r1, keyfun = "hazard", mixture="NB",se = T)
+
+
+d13r1 = gdistsamp(lambdaformula = ~dua-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf13r1, keyfun = "hazard", mixture="NB",se = T)
+
+e13r1 = gdistsamp(lambdaformula = ~region-1, 
+                  phiformula = ~1, 
+                  pformula = ~ 1,
+                  data = umf13r1, keyfun = "hazard", mixture="NB",se = T)
+
+f13r1 = gdistsamp(lambdaformula = ~dista-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf13r1, keyfun = "hazard", mixture="NB",se = T)
+
+g13r1 = gdistsamp(lambdaformula = ~habtype + int - 1, 
+                  phiformula = ~1, 
+                  pformula = ~ 1, 
+                  data = umf13r1, keyfun = "hazard", mixture = "NB", se = T)
+
+h13r1 = gdistsamp(lambdaformula = ~habtype + int + waterd - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r1, keyfun = "hazard", mixture = "NB", se = T)
+
+i13r1 = gdistsamp(lambdaformula = ~habtype + waterd - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r1, keyfun = "hazard", mixture = "NB", se = T)
+
+j13r1 = gdistsamp(lambdaformula = ~habtype + dua - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r1, keyfun = "hazard", mixture = "NB", se = T)
+
+k13r1 = gdistsamp(lambdaformula = ~habtype + region - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r1, keyfun = "hazard", mixture = "NB", se = T)
+
+l13r1 = gdistsamp(lambdaformula = ~habtype + dista - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r1, keyfun = "hazard", mixture = "NB", se = T)
+
+m13r1 = gdistsamp(lambdaformula = ~habtype + region + int - 1, 
+                   phiformula = ~1, 
+                   pformula = ~  1, 
+                   data = umf13r1, keyfun = "hazard", mixture = "NB", se = T)
+
+list13r1 = fitList(null13r1, global13r1, a13r1, b13r1, c13r1, d13r1, e13r1, f13r1, g13r1, h13r1, i13r1,j13r1,k13r1,l13r1,m13r1)
+model13r1 =modSel(list13r1)
+```
+# 2013 Round 2
+```{r, warning=FALSE, message=FALSE}
+#read in the sora observations
+sora13r2 <- as.matrix(read.csv('2013r2_sora.csv', header=T))
+#read in the covariate data #organized by impoundment.
+cov13r2 <- read.csv('2013r2_cov.csv', header=T)
+#subset covaraites we need
+cov13r2 <- cov13r2[,c("habtype","region","dua","dista","int","effortm","waterd")]
+#put in the two missing 0s
+cov13r2[c(1,12),7] = 0
+#drop upland units, since there aren't enough of them
+cov13r2 <- subset(cov13r2, cov13r2$habtype=="ms"|cov13r2$habtype=="pe")
+# #the distance bins
+cutpt = as.numeric(c(0,1,2,3,4,5,6,7,8,9,10,11,12)) 
+#Unmarked Data Frame
+umf13r2 = unmarkedFrameGDS(y=sora13r2, 
+                           numPrimary=8,
+                           siteCovs = cov13r2,
+                           survey="line", 
+                           dist.breaks=cutpt,  
+                           unitsIn="m", 
+                           tlength=cov13r2$effortm,
+)
+
+null13r2 = gdistsamp(lambdaformula = ~1,
+                     phiformula = ~1, 
+                     pformula = ~  1, 
+                     data = umf13r2, keyfun = "hazard", mixture="NB",se = T
+)
+
+global13r2 = gdistsamp(lambdaformula = ~int+habtype+region+dua+dista+waterd-1, 
+                       phiformula = ~1,
+                       pformula = ~ 1, 
+                       data = umf13r2, keyfun = "hazard", mixture="NB",se = T)
+
+a13r2 = gdistsamp(lambdaformula = ~int-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf13r2, keyfun = "hazard", mixture="NB",se = T)
+
+
+b13r2 = gdistsamp(lambdaformula = ~waterd-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf13r2, keyfun = "hazard", mixture="NB",se = T)
+
+
+c13r2 = gdistsamp(lambdaformula = ~habtype-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf13r2, keyfun = "hazard", mixture="NB",se = T)
+
+d13r2 = gdistsamp(lambdaformula = ~dua-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf13r2, keyfun = "hazard", mixture="NB",se = T)
+
+e13r2 = gdistsamp(lambdaformula = ~region-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf13r2, keyfun = "hazard", mixture="NB",se = T)
+
+f13r2 = gdistsamp(lambdaformula = ~dista - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r2, keyfun = "hazard", mixture = "NB", se = T)
+
+g13r2 = gdistsamp(lambdaformula = ~habtype + int - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r2, keyfun = "hazard", mixture = "NB", se = T)
+
+h13r2 = gdistsamp(lambdaformula = ~habtype + int + waterd - 1, 
+                  phiformula = ~1, 
+                  pformula = ~ 1, 
+                  data = umf13r2, keyfun = "hazard", mixture = "NB", se = T)
+
+i13r2 = gdistsamp(lambdaformula = ~habtype + waterd - 1, 
+                  phiformula = ~1, 
+                  pformula = ~ 1, 
+                  data = umf13r2, keyfun = "hazard", mixture = "NB", se = T)
+
+j13r2 = gdistsamp(lambdaformula = ~habtype + dua - 1, 
+                  phiformula = ~1, 
+                  pformula = ~ 1, 
+                  data = umf13r2, keyfun = "hazard", mixture = "NB", se = T)
+
+k13r2 = gdistsamp(lambdaformula = ~habtype + region - 1, 
+                  phiformula = ~1, 
+                  pformula = ~ 1, 
+                  data = umf13r2, keyfun = "hazard", mixture = "NB", se = T)
+
+l13r2 = gdistsamp(lambdaformula = ~habtype + dista- 1, 
+                  phiformula = ~1, 
+                  pformula = ~ 1, 
+                  data = umf13r2, keyfun = "hazard", mixture = "NB", se = T)
+
+m13r2 = gdistsamp(lambdaformula = ~habtype + region + int - 1, 
+                   phiformula = ~1, 
+                   pformula = ~  1, 
+                   data = umf13r2, keyfun = "hazard", mixture = "NB", se = T)
+
+list13r2 = fitList(null13r2, global13r2, a13r2, b13r2, c13r2, d13r2, e13r2, f13r2, g13r2, h13r2, i13r2, j13r2, k13r2, l13r2,m13r2)
+model13r2 = modSel(list13r2)
+```
+# 2013 Round 3
+```{r, message=FALSE, warning=FALSE}
+#read in the sora observations
+sora13r3 <- as.matrix(read.csv("2013r3_sora.csv", header=T))
+#read in the covariate data #organized by impoundment.
+cov13r3 <- read.csv('2013r3_cov.csv', header=T)
+#subset the covariates
+cov13r3 <- cov13r3[,c("habtype","region","duration","dista","int","effortm","waterd")]
+# #the distance bins
+cutpt = as.numeric(c(0,1,2,3,4,5,6,7,8,9,10,11,12))
+#Unmarked Data Frame
+umf13r3 = unmarkedFrameGDS(y=sora13r3, 
+                           numPrimary=8,
+                           siteCovs = cov13r3,
+                           survey="line", 
+                           dist.breaks=cutpt,  
+                           unitsIn="m", 
+                           tlength=cov13r3$effortm,
+)
+
+null13r3 = gdistsamp(lambdaformula = ~1,
+                     phiformula = ~1, 
+                     pformula = ~  1, 
+                     data = umf13r3, keyfun = "hazard", mixture="NB",se = T)
+
+global13r3 = gdistsamp(lambdaformula = ~int+waterd++region+dua+dista+habtype-1, 
+                       phiformula = ~1,
+                       pformula = ~  1, 
+                       data = umf13r3, keyfun = "hazard", mixture="NB",se = T)
+
+a13r3 = gdistsamp(lambdaformula = ~int-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf13r3, keyfun = "hazard", mixture="NB",se = T)
+
+
+b13r3 = gdistsamp(lambdaformula = ~waterd-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf13r3, keyfun = "hazard", mixture="NB",se = T)
+
+c13r3 = gdistsamp(lambdaformula = ~habtype-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf13r3, keyfun = "hazard", mixture="NB",se = T)
+
+d13r3 = gdistsamp(lambdaformula = ~duration-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf13r3, keyfun = "hazard", mixture="NB",se = T)
+
+e13r3 = gdistsamp(lambdaformula = ~region -1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf13r3, keyfun = "hazard", mixture="NB",se = T)
+
+f13r3 = gdistsamp(lambdaformula = ~dista -1, 
+                  phiformula = ~1, 
+                  pformula = ~ 1,
+                  data = umf13r3, keyfun = "hazard", mixture="NB",se = T)
+
+g13r3 = gdistsamp(lambdaformula = ~habtype + int - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r3, keyfun = "hazard", mixture = "NB", se = T)
+
+h13r3 = gdistsamp(lambdaformula = ~habtype + int + waterd - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r3, keyfun = "hazard", mixture = "NB", se = T)
+
+i13r3 = gdistsamp(lambdaformula = ~habtype + waterd - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r3, keyfun = "hazard", mixture = "NB", se = T)
+
+j13r3 = gdistsamp(lambdaformula = ~habtype + dua - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r3, keyfun = "hazard", mixture = "NB", se = T)
+
+k13r3 = gdistsamp(lambdaformula = ~habtype + region - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r3, keyfun = "hazard", mixture = "NB", se = T)
+
+l13r3 = gdistsamp(lambdaformula = ~habtype + dista - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r3, keyfun = "hazard", mixture = "NB", se = T)
+
+m13r3 = gdistsamp(lambdaformula = ~habtype + region + int - 1, 
+                   phiformula = ~1, 
+                   pformula = ~  1, 
+                   data = umf13r3, keyfun = "hazard", mixture = "NB", se = T)
+
+list13r3 = fitList(null13r3, global13r3, a13r3, b13r3, c13r3, d13r3, e13r3, f13r3, g13r3, h13r3,i13r3,j13r3,k13r3,l13r3,m13r3)
+model13r3 = modSel(list13r3)
+```
+# 2013 Round 4
+```{r, warning=FALSE, message=FALSE}
+#sora 
+sora13r4 <- as.matrix(read.csv('2013r4_sora.csv', header=T))
+#read in the covariate data #organized by impoundment.
+cov13r4 <- read.csv('2013r4_cov.csv', header=T)
+#subset the covariates
+cov13r4 <- cov13r4[,c("habtype","region","dua","dista","int","effortm","waterd")]
+#drop upland units, since there aren't enough of them
+cov13r4 <- subset(cov13r4, cov13r4$habtype=="ms"|cov13r4$habtype=="pe")
+# the distance bins
+cutpt = as.numeric(c(0,1,2,3,4,5,6,7,8,9,10,11,12)) 
+#Unmarked Data Frame
+umf13r4 = unmarkedFrameGDS(y=sora13r4, 
+                           numPrimary=8,
+                           siteCovs = cov13r4,
+                           survey="line", 
+                           dist.breaks=cutpt,  
+                           unitsIn="m", 
+                           tlength=cov13r4$effortm,
+)
+
+null13r4 = gdistsamp(lambdaformula = ~1,
+                     phiformula = ~1, 
+                     pformula = ~  1, 
+                     data = umf13r4, keyfun = "hazard", mixture="NB",se = T)
+
+global13r4 = gdistsamp(lambdaformula = ~int+habtype+waterd+dua+dista-1, 
+                       phiformula = ~1,
+                       pformula = ~  1, 
+                       data = umf13r4, keyfun = "hazard", mixture="NB",se = T)
+
+a13r4 = gdistsamp(lambdaformula = ~int-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf13r4, keyfun = "hazard", mixture="NB",se = T)
+
+b13r4 = gdistsamp(lambdaformula = ~waterd-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf13r4, keyfun = "hazard", mixture="NB",se = T)
+
+c13r4 = gdistsamp(lambdaformula = ~habtype-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf13r4, keyfun = "hazard", mixture="NB",se = T)
+
+d13r4 = gdistsamp(lambdaformula = ~dua-1, 
+                  phiformula = ~1, 
+                  pformula = ~  1,
+                  data = umf13r4, keyfun = "hazard", mixture="NB",se = T)
+
+#e13r4 = gdistsamp(lambdaformula = ~region-1, 
+#                  phiformula = ~1, 
+#                  pformula = ~  1,
+#                  data = umf13r4, keyfun = "hazard", mixture="NB",se = T)
+
+f13r4 = gdistsamp(lambdaformula = ~dista- 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r4, keyfun = "hazard", mixture = "NB", se = T)
+
+g13r4 = gdistsamp(lambdaformula = ~habtype + int - 1, 
+                  phiformula = ~1,
+                  pformula = ~  1, 
+                  data = umf13r4, keyfun = "hazard", mixture = "NB", se = T)
+
+h13r4 = gdistsamp(lambdaformula = ~habtype + int + waterd - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r4, keyfun = "hazard", mixture = "NB", se = T)
+
+i13r4 = gdistsamp(lambdaformula = ~habtype + waterd - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r4, keyfun = "hazard", mixture = "NB", se = T)
+
+j13r4 = gdistsamp(lambdaformula = ~habtype + dua - 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r4, keyfun = "hazard", mixture = "NB", se = T)
+
+#k13r4 = gdistsamp(lambdaformula = ~habtype + region - 1, 
+#                  phiformula = ~1, 
+#                  pformula = ~  1, 
+#                  data = umf13r4, keyfun = "hazard", mixture = "NB", se = T)
+
+l13r4 = gdistsamp(lambdaformula = ~habtype + dista- 1, 
+                  phiformula = ~1, 
+                  pformula = ~  1, 
+                  data = umf13r4, keyfun = "hazard", mixture = "NB", se = T)
+
+#m13r4 = gdistsamp(lambdaformula = ~habtype + region + int - 1, 
+#                   phiformula = ~1, 
+#                   pformula = ~  1, 
+#                   data = umf13r4, keyfun = "hazard", mixture = "NB", se = T)
+
+list13r4 = fitList(null13r4, global13r4, a13r4, b13r4,c13r4, d13r4,f13r4,g13r4,h13r4,i13r4,j13r4,l13r4)
+model13r4 = modSel(list13r4)
+```
+# Output Tables from models
+```{r}
+model12r2
+
+model12r3
+
+model13r1
+
+model13r2
+
+model13r3
+
+model13r4
+```
+# Prediction Data Frames
+```{r}
+int12r2 <- data.frame(int = seq(min(cov12r2$int), max(cov12r2$int), length=15),
+                      waterd=mean(cov12r2$waterd),
+                      habtype=rep(factor(x=c("ms", "pe"), levels = c("pe", "ms")),each=15))
+
+water12r2 <- data.frame(habtype=rep(factor(x=c("ms", "pe"), levels = c("pe", "ms")),each=15),
+                       waterd=seq(min(cov12r2$waterd), max(cov12r2$waterd), length=15),times=1,
+                       mean(cov12r2$int),
+                       int=mean(cov12r2$int))
+
+hab12r2 <- data.frame(habtype=rep(factor(x=c("ms", "pe"), levels = c("pe", "ms")),each=1),
+                      waterd=mean(cov12r2$waterd),
+                      int=mean(cov12r2$int))
+
+#####################################
+
+reg13r1 <- data.frame(region = unique(cov13r1$region))
+
+hab13r1 <- data.frame(habtype = unique(cov13r1$habtype))
+
+water13r1 <- data.frame(waterd = seq(min(cov13r1$waterd), max(cov13r1$waterd), length=15),
+                        habtype=rep(factor(x=c("ms", "pe"), levels = c("pe", "ms")),each=15))
+
+int13r1 <- data.frame(int = seq(min(cov13r1$int), max(cov13r1$int), length=15),
+                      habtype=rep(factor(x=c("ms", "pe"), levels = c("pe", "ms")),each=15))
+
+du13r1 <- data.frame(dua = unique(cov13r1$dua))
+dist13r1 <- data.frame(dista = unique(cov13r1$dista))
+
+#############
+du13r3 <- data.frame(duration = unique(cov13r3$duration))
+#######################################
+
+water13r4 <- data.frame(habtype=rep(factor(x=c("ms", "pe"), levels = c("pe", "ms")),each=15),
+                        waterd =seq(min(cov13r4$waterd),max(cov13r4$waterd), length=15))
+
+du13r4 <- data.frame(dua=rep(unique(cov13r4$dua), each=2),
+                      habtype=rep(factor(x=c("ms", "pe"), levels = c("pe", "ms")),times=2))
+
+dist13r4 <- data.frame(dista = rep(unique(cov13r4$dista), each=2),
+                       habtype=rep(factor(x=c("ms", "pe"), levels = c("pe", "ms")),times=2))
+```
+# Predictions
+```{r, warning=FALSE, message=FALSE}
+#####2012 Round 2 #############
+pint12r2 <- predict(h12r2, type="lambda", newdata=int12r2, appendData=T)
+pwater12r2 <- predict(h12r2, type="lambda", newdata=water12r2, appendData=T)
+phab12r2 <-predict(h12r2, type="lambda", newdat=hab12r2, appendData=T)
+#######2013 Round 1###########
+pregion13r1 <- predict(e13r1, type="lambda", newdata=reg13r1, appendData=T)
+phab13r1 <- predict(c13r1, type="lambda", newdata=hab13r1, appendData=T)
+pwater13r1 <- predict(i13r1, type="lambda", newdata=water13r1, appendData=T)
+pint13r1 <- predict(g13r1, type="lambda", newdata=int13r1, appendData=T)
+pdu13r1 <- predict(d13r1, type="lambda", newdata=du13r1, appendData=T)
+pdist13r1 <- predict(f13r1, type="lambda", newdata=dist13r1, appendData=T)
+###########
+pdur13r3 <- predict(d13r3, type="lambda", newdata=du13r3, appendData=T)
+#########2013 ROund 4##########
+pdu13r4 <-predict(j13r4, type="lambda", newdata=du13r4, appendData=T)
+pwater13r4 <-predict(i13r4, type="lambda", newdata=water13r4, appendData=T)
+pdist13r4 <-predict(f13r4, type="lambda", newdata=dist13r4, appendData=T)
+```
+# Figure 1
+Study Sites Map
+
+# Figure 2 - Interspersion by Habitat Type in Round 2 2012
+```{r, fig.width=15, fig.height=15}
+#cbPalette <- c("#cc4c02","#8c2d04","#8c96c6","#88419d", "#810f7c","#4d004b")
+
+pint12r2$int = pint12r2$int*100
+
+pint12r2$habtitle = ifelse(pint12r2$habtype=="ms","moist soil",
+                             ifelse(pint12r2$habtype=="pe","perennial emergent",NA))
+
+ggplot() +
+  geom_line(data=pint12r2, aes(x=int, y=Predicted, group=habtitle, colour=habtitle), size=2)+
+  xlab("Interspersion (%)") +
+  ylab("Sora per Hectare") +
+  scale_y_continuous(limits=c(0,100))+
+  #ggtitle("The Impact of Interspersion\n on Sora Density in 2012 Round 2") +
+  #scale_colour_manual(values=cbPalette)+
+  theme(plot.title = element_text(colour="black",size=40), #plot title
+        axis.text.x = element_text(colour="black", size=20), #x axis labels
+        axis.text.y = element_text(colour="black",size=20), #y axis labels
+        axis.title.x = element_text(colour="black", size=30, vjust=-.5), #x axis title
+        axis.title.y = element_text(colour="black",size=30), #y axis title
+        legend.text = element_text(colour="black", size=20), #legend text
+        legend.title = element_blank(),#legend title
+        legend.background = element_rect(fill="white"), #legend background color
+        legend.position = "top",
+        legend.direction= "horizontal",
+        legend.key = element_blank(),
+        plot.background = element_rect(fill = "white" ), #plot background color
+        panel.background = element_rect(fill = "white"), #panel background color
+        panel.grid.major.y= element_line(colour="black"), #y axis grid line color
+        panel.grid.major.x = element_line(colour=NA),
+        panel.grid.minor = element_line(colour=NA),
+        plot.margin = unit(c(3,3,3,3), "line"))
+
+```
+# Figure 3 - Water Depth by Habitat Type in Round 2 2012
+```{r, fig.width=15, fig.height=15}
+#cbPalette <- c("#cc4c02","#8c2d04","#8c96c6","#88419d", "#810f7c","#4d004b")
+
+pwater12r2$habtitle = ifelse(pwater12r2$habtype=="ms","moist soil",
+                             ifelse(pwater12r2$habtype=="pe","perennial emergent",NA))
+
+
+ggplot() +
+  geom_line(data=pwater12r2, aes(x=waterd, y=Predicted, group=habtitle, colour=habtitle), size=2)+
+  xlab("Average Water Depth (cm)") +
+  ylab("Sora per Hectare") +
+  scale_y_continuous(limits=c(0,125))+
+  #ggtitle("The Impact of Water Depth\n on Sora Density in 2012 Round 2") +
+  #scale_colour_manual(values=cbPalette)+
+  theme(plot.title = element_text(colour="black",size=40), #plot title
+        axis.text.x = element_text(colour="black", size=20), #x axis labels
+        axis.text.y = element_text(colour="black",size=20), #y axis labels
+        axis.title.x = element_text(colour="black", size=30, vjust=-.5), #x axis title
+        axis.title.y = element_text(colour="black",size=30), #y axis title
+        legend.text = element_text(colour="black", size=20), #legend text
+        legend.title = element_blank(),#legend title
+        legend.background = element_rect(fill="#CCCCCC"), #legend background color
+        legend.position = "top",
+        legend.direction= "horizontal",
+        legend.key = element_blank(),
+        plot.background = element_rect(fill = "#CCCCCC" ), #plot background color
+        panel.background = element_rect(fill = "#CCCCCC"), #panel background color
+        panel.grid.major.y= element_line(colour="black"), #y axis grid line color
+        panel.grid.major.x = element_line(colour=NA),
+        panel.grid.minor = element_line(colour=NA),
+        plot.margin = unit(c(3,3,3,3), "line"))
+
+```
+# Figure 4 - Sora Abundance by Habitat Type in Round 2 2012
+```{r, fig.width=15, fig.height=15}
+#cbPalette <- c("#cc4c02","#8c2d04","#8c96c6","#88419d", "#810f7c","#4d004b")
+
+phab12r2$habtitle = ifelse(phab12r2$habtype=="ms","moist soil",
+                           ifelse(phab12r2$habtype=="pe", "perennial emergent", NA))
+
+ggplot(phab12r2, aes(x=habtitle, y=Predicted, fill=habtitle),) + 
+  geom_bar( position=position_dodge(), stat="identity", colour="black", size=.8)+
+  geom_errorbar(aes(ymin=Predicted-SE, ymax=Predicted+SE),
+                size=.3,    # Thinner lines
+                width=.2,
+                position=position_dodge(.9),
+                colour="black") +
+  xlab("Habitat Types") +
+  ylab("Sora per Hectare") +
+  #ggtitle("Sora Density by Habitat Type in 2013 Round 1") +
+  theme(plot.title = element_text(colour="black",size=40), #plot title
+        axis.text.x = element_text(colour="black", size=20), #x axis labels
+        axis.text.y = element_text(colour="black",size=20), #y axis labels
+        axis.title.x = element_text(colour="black", size=30, vjust=-.5), #x axis title
+        axis.title.y = element_text(colour="black",size=30), #y axis title
+        legend.text = element_text(colour="black", size=30), #legend text
+        legend.title = element_blank(),#legend title
+        legend.background = element_rect(fill="white"), #legend background color
+        legend.position = "top",
+        legend.direction= "horizontal",
+        legend.key = element_blank(),
+        plot.background = element_rect(fill = "white" ), #plot background color
+        panel.background = element_rect(fill = "white"), #panel background color
+        panel.grid.major.y= element_line(colour="black"), #y axis grid line color
+        panel.grid.major.x = element_line(colour=NA),
+        panel.grid.minor = element_line(colour=NA))+ #x axis grid line color
+  guides(fill=guide_legend(title="Habitat Type")) #retitles the legend
+```
+# Figure 5 - Sora Abundance by Region in Round 1 2013
+```{r, fig.width=15, fig.height=15}
+#cbPalette <- c("#cc4c02","#8c2d04","#8c96c6","#88419d", "#810f7c","#4d004b")
+
+pregion13r1$regiontitle = ifelse(pregion13r1$region=="nc","north central",
+                                 ifelse(pregion13r1$region=="ne", "northeast",
+                                        ifelse(pregion13r1$region=="nw","northwest",
+                                               ifelse(pregion13r1$region=="se", "southeast","NA"))))
+
+ggplot(pregion13r1, aes(x=regiontitle, y=Predicted, fill=regiontitle),) + 
+  geom_bar( position=position_dodge(), stat="identity", colour="black", size=.8)+
+  geom_errorbar(aes(ymin=Predicted-SE, ymax=Predicted+SE),
+                size=.3,    # Thinner lines
+                width=.2,
+                position=position_dodge(.9),
+                colour="black") +
+  xlab("Regions of Missouri") +
+  ylab("Sora per Hectare") +
+  #ggtitle("The Impact of Region on Sora Density in 2013 Round 1") +
+  theme(plot.title = element_text(colour="black",size=40), #plot title
+        axis.text.x = element_text(colour="black", size=20), #x axis labels
+        axis.text.y = element_text(colour="black",size=20), #y axis labels
+        axis.title.x = element_text(colour="black", size=30, vjust=-.5), #x axis title
+        axis.title.y = element_text(colour="black",size=30), #y axis title
+        legend.text = element_text(colour="black", size=30), #legend text
+        legend.title = element_blank(),#legend title
+        legend.background = element_rect(fill="white"), #legend background color
+        legend.position = "top",
+        legend.direction= "horizontal",
+        legend.key = element_blank(),
+        plot.background = element_rect(fill = "white" ), #plot background color
+        panel.background = element_rect(fill = "white"), #panel background color
+        panel.grid.major.y= element_line(colour="black"), #y axis grid line color
+        panel.grid.major.x = element_line(colour=NA),
+        panel.grid.minor = element_line(colour=NA)) #x axis grid line color
+
+```
+# Figure 6 - Sora Abundance by Habitat Type in Round 1 2013
+```{r, fig.width=15, fig.height=15}
+cbPalette <- c("#cc4c02","#8c2d04","#8c96c6","#88419d", "#810f7c","#4d004b")
+
+phab13r1$habtitle = ifelse(phab13r1$habtype=="ms","moist soil",
+                           ifelse(phab13r1$habtype=="pe", "perennial emergent", NA))
+
+ggplot(phab13r1, aes(x=habtitle, y=Predicted, fill=habtitle),) + 
+  geom_bar( position=position_dodge(), stat="identity", colour="black", size=.8)+
+  geom_errorbar(aes(ymin=Predicted-SE, ymax=Predicted+SE),
+                size=.3,    # Thinner lines
+                width=.2,
+                position=position_dodge(.9),
+                colour="black") +
+  xlab("Habitat Types") +
+  ylab("Sora per Hectare") +
+  ggtitle("Sora Density by Habitat Type in 2013 Round 1") +
+  theme(plot.title = element_text(colour="black",size=40), #plot title
+        axis.text.x = element_text(colour="black", size=20), #x axis labels
+        axis.text.y = element_text(colour="black",size=20), #y axis labels
+        axis.title.x = element_text(colour="black", size=30, vjust=-.5), #x axis title
+        axis.title.y = element_text(colour="black",size=30), #y axis title
+        legend.text = element_text(colour="black", size=30), #legend text
+        legend.title = element_blank(),#legend title
+        legend.background = element_rect(fill="white"), #legend background color
+        legend.position = "top",
+        legend.direction= "horizontal",
+        legend.key = element_blank(),
+        plot.background = element_rect(fill = "white" ), #plot background color
+        panel.background = element_rect(fill = "white"), #panel background color
+        panel.grid.major.y= element_line(colour="black"), #y axis grid line color
+        panel.grid.major.x = element_line(colour=NA),
+        panel.grid.minor = element_line(colour=NA))+ #x axis grid line color
+  guides(fill=guide_legend(title="Habitat Type")) #retitles the legend
+```
+# Figure 7 - Water Depth by Habitat Type in Round 1 2013
+```{r, fig.width=15, fig.height=15}
+#cbPalette <- c("#cc4c02","#8c2d04","#8c96c6","#88419d", "#810f7c","#4d004b")
+
+pwater13r1$habtitle = ifelse(pwater13r1$habtype=="ms","moist soil",
+                             ifelse(pwater13r1$habtype=="pe","perennial emergent",NA))
+
+
+ggplot() +
+  geom_line(data=pwater13r1, aes(x=waterd, y=Predicted, group=habtitle, colour=habtitle), size=2)+
+  xlab("Average Water Depth (cm)") +
+  ylab("Sora per Hectare") +
+  scale_y_continuous(limits=c(0,100))+
+ # ggtitle("The Impact of Water Depth\n on Sora Density in 2012 Round 2") +
+  #scale_colour_manual(values=cbPalette)+
+  theme(plot.title = element_text(colour="black",size=40), #plot title
+        axis.text.x = element_text(colour="black", size=20), #x axis labels
+        axis.text.y = element_text(colour="black",size=20), #y axis labels
+        axis.title.x = element_text(colour="black", size=30, vjust=-.5), #x axis title
+        axis.title.y = element_text(colour="black",size=30), #y axis title
+        legend.text = element_text(colour="black", size=20), #legend text
+        legend.title = element_blank(),#legend title
+        legend.background = element_rect(fill="white"), #legend background color
+        legend.position = "top",
+        legend.direction= "horizontal",
+        legend.key = element_blank(),
+        plot.background = element_rect(fill = "white" ), #plot background color
+        panel.background = element_rect(fill = "white"), #panel background color
+        panel.grid.major.y= element_line(colour="black"), #y axis grid line color
+        panel.grid.major.x = element_line(colour=NA),
+        panel.grid.minor = element_line(colour=NA),
+        plot.margin = unit(c(3,3,3,3), "line"))
+
+```
+# Figure 8 - Interspersion by Habitat Type in Round 1 2013
+```{r, fig.width=15, fig.height=15}
+#cbPalette <- c("#cc4c02","#8c2d04","#8c96c6","#88419d", "#810f7c","#4d004b")
+
+pint13r1$habtitle = ifelse(pwater13r1$habtype=="ms","moist soil",
+                             ifelse(pwater13r1$habtype=="pe","perennial emergent",NA))
+
+
+ggplot() +
+  geom_line(data=pint13r1, aes(x=int, y=Predicted, group=habtitle, colour=habtitle), size=2)+
+  xlab("Interspersion (%)") +
+  ylab("Sora per Hectare") +
+  scale_y_continuous(limits=c(0,100))+
+ # ggtitle("The Impact of Interspersion\n on Sora Density in 2012 Round 2") +
+  #scale_colour_manual(values=cbPalette)+
+  theme(plot.title = element_text(colour="black",size=40), #plot title
+        axis.text.x = element_text(colour="black", size=20), #x axis labels
+        axis.text.y = element_text(colour="black",size=20), #y axis labels
+        axis.title.x = element_text(colour="black", size=30, vjust=-.5), #x axis title
+        axis.title.y = element_text(colour="black",size=30), #y axis title
+        legend.text = element_text(colour="black", size=20), #legend text
+        legend.title = element_blank(),#legend title
+        legend.background = element_rect(fill="white"), #legend background color
+        legend.position = "top",
+        legend.direction= "horizontal",
+        legend.key = element_blank(),
+        plot.background = element_rect(fill = "white" ), #plot background color
+        panel.background = element_rect(fill = "white"), #panel background color
+        panel.grid.major.y= element_line(colour="black"), #y axis grid line color
+        panel.grid.major.x = element_line(colour=NA),
+        panel.grid.minor = element_line(colour=NA),
+        plot.margin = unit(c(3,3,3,3), "line"))
+
+```
+# Figure 9 - Draw Up Date by Habitat in Round 4 2013
+```{r, fig.width=15, fig.height=15}
+cbPalette <- c("#cc4c02","#8c96c6","#88419d", "#810f7c","#4d004b")
+
+pdu13r4$dutitle = ifelse(pdu13r4$dua=="a","None","February")
+
+pdu13r4$habtitle = ifelse(pdu13r4$habtype=="ms","moist soil",
+                          ifelse(pdu13r4$habtype=="pe","perennial emergent",NA))
+
+ggplot(pdu13r4, aes(x=habtitle, y=Predicted, fill=dutitle),) + 
+  geom_bar( position=position_dodge(), stat="identity", colour="black", size=.8)+
+  geom_errorbar(aes(ymin=Predicted-SE, ymax=Predicted+SE),
+                size=.3,    # Thinner lines
+                width=.2,
+                position=position_dodge(.9),
+                colour="black") +
+  xlab("Habitat Types") +
+  ylab("Sora per Hectare") +
+ # ggtitle("Sora Density by Habitat Type\n and Draw Up Date in 2013 Round 4") +
+  scale_fill_manual(values=cbPalette)+
+  theme(plot.title = element_text(colour="black",size=40), #plot title
+        axis.text.x = element_text(colour="black", size=20), #x axis labels
+        axis.text.y = element_text(colour="black",size=20), #y axis labels
+        axis.title.x = element_text(colour="black", size=30, vjust=-.5), #x axis title
+        axis.title.y = element_text(colour="black",size=30), #y axis title
+        legend.text = element_text(colour="black", size=30), #legend text
+        legend.title = element_blank(),#legend title
+        legend.background = element_rect(fill="white"), #legend background color
+        legend.position = "top",
+        legend.direction= "horizontal",
+        legend.key = element_blank(),
+        plot.background = element_rect(fill = "white" ), #plot background color
+        panel.background = element_rect(fill = "white"), #panel background color
+        panel.grid.major.y= element_line(colour="black"), #y axis grid line color
+        panel.grid.major.x = element_line(colour=NA),
+        panel.grid.minor = element_line(colour=NA))+ #x axis grid line color
+  guides(fill=guide_legend(title="Habitat Type")) #retitles the legend
+
+
+```
+# Figure 10 - Water Depth in Habitat Type in Round 4 2013
+```{r, fig.width=15, fig.height=15}
+cbPalette <- c("#cc4c02","#8c2d04","#8c96c6","#88419d", "#810f7c","#4d004b")
+
+pwater13r4$habtitle = ifelse(pwater13r4$habtype=="pe","moist soil",
+                             ifelse(pwater13r4$habtype=="ms", "perennial emergent",NA))
+
+ggplot() +
+  geom_line(data=pwater13r4, aes(x=waterd, y=Predicted, group=habtitle, colour=habtitle), size=2)+
+  xlab("Water Depth (cm)") +
+  ylab("Sora per Hectare") +
+  scale_y_continuous(limits=c(0,100))+
+  #ggtitle("Sora Density by Water Depth\n and Habitat Type in 2013 Round 4") +
+  scale_colour_manual(values=cbPalette)+
+  theme(plot.title = element_text(colour="black",size=40), #plot title
+        axis.text.x = element_text(colour="black", size=20), #x axis labels
+        axis.text.y = element_text(colour="black",size=20), #y axis labels
+        axis.title.x = element_text(colour="black", size=30, vjust=-.5), #x axis title
+        axis.title.y = element_text(colour="black",size=30), #y axis title
+        legend.text = element_text(colour="black", size=20), #legend text
+        legend.title = element_blank(),#legend title
+        legend.background = element_rect(fill="#CCCCCC"), #legend background color
+        legend.position = "top",
+        legend.direction= "horizontal",
+        legend.key = element_blank(),
+        plot.background = element_rect(fill = "#CCCCCC" ), #plot background color
+        panel.background = element_rect(fill = "#CCCCCC"), #panel background color
+        panel.grid.major.y= element_line(colour="black"), #y axis grid line color
+        panel.grid.major.x = element_line(colour=NA),
+        panel.grid.minor = element_line(colour=NA),
+        plot.margin = unit(c(3,3,3,3), "line"))+
+  guides(col = guide_legend(nrow = 2))
+```
+# Figure 11 - Disturbance in Habitat Type in Round 4 2013
+```{r, fig.width=15, fig.height=15}
+cbPalette <- c("#cc4c02","#8c96c6","#88419d", "#810f7c","#4d004b")
+
+pdist13r4$disttitle = ifelse(pdist13r4$dista=="a","None",
+                             ifelse(pdist13r4$dista=="f","mowed",NA))
+
+pdist13r4$habtitle = ifelse(pdist13r4$habtype=="ms","moist soil",
+                          ifelse(pdist13r4$habtype=="pe","perennial emergent",NA))
+
+ggplot(pdist13r4, aes(x=disttitle, y=Predicted, fil=disttitle),) + 
+  geom_bar( position=position_dodge(), stat="identity", colour="black", size=.8)+
+  geom_errorbar(aes(ymin=Predicted-SE, ymax=Predicted+SE),
+                size=.3,    # Thinner lines
+                width=.2,
+                position=position_dodge(.9),
+                colour="black") +
+  xlab("Habitat Types") +
+  ylab("Sora per Hectare") +
+   scale_fill_manual(values=cbPalette)+
+  #ggtitle("Sora Density by Habitat Type\n and Disturbance Type in 2013 Round 4") +
+  theme(plot.title = element_text(colour="black",size=40), #plot title
+        axis.text.x = element_text(colour="black", size=20), #x axis labels
+        axis.text.y = element_text(colour="black",size=20), #y axis labels
+        axis.title.x = element_text(colour="black", size=30, vjust=-.5), #x axis title
+        axis.title.y = element_text(colour="black",size=30), #y axis title
+        legend.text = element_text(colour="black", size=30), #legend text
+        legend.title = element_blank(),#legend title
+        legend.background = element_rect(fill="white"), #legend background color
+        legend.position = "top",
+        legend.direction= "horizontal",
+        legend.key = element_blank(),
+        plot.background = element_rect(fill = "white" ), #plot background color
+        panel.background = element_rect(fill = "white"), #panel background color
+        panel.grid.major.y= element_line(colour="black"), #y axis grid line color
+        panel.grid.major.x = element_line(colour=NA),
+        panel.grid.minor = element_line(colour=NA))+ #x axis grid line color
+  guides(fill=guide_legend(title="Habitat Type")) #retitles the legend
+
+
+```
+
+# Figure 12 - Draw Up Datein Round 1 2013
+```{r, fig.width=15, fig.height=15}
+cbPalette <- c("#fff7fb","#ece2f0","#d0d1e6","#a6bddb","#67a9cf","#3690c0","#02818a","#016c59", "#014636")
+
+pdur13r3$dutitle = ifelse(pdur13r3$duration=="a","natural \nfluctuation",
+                         ifelse(pdur13r3$duration=="b","1",
+                            ifelse(pdur13r3$duration=="c","2",
+                                   ifelse(pdur13r3$duration=="d", "4",
+                                          ifelse(pdur13r3$duration=="e","5",
+                                                 ifelse(pdur13r3$duration=="f","constant","NA"))))))
+
+
+ggplot(pdur13r3, aes(x=dutitle, y=Predicted, fill=dutitle)) + 
+  geom_bar(position=position_dodge(), stat="identity", colour="black", size=.8)+
+  geom_errorbar(aes(ymin=Predicted-SE, ymax=Predicted+SE),
+                size=.3,    # Thinner lines
+                width=.2,
+                position=position_dodge(.9),
+                colour="black") +
+  xlab("Habitat Types") +
+  ylab("Sora per Hectare") +
+ # ggtitle("Sora Density by Habitat Type\n and Draw Up Date in 2013 Round 4") +
+  scale_fill_manual(values=cbPalette)+
+  theme(plot.title = element_text(colour="black",size=40), #plot title
+        axis.text.x = element_text(colour="black", size=20), #x axis labels
+        axis.text.y = element_text(colour="black",size=20), #y axis labels
+        axis.title.x = element_text(colour="black", size=30, vjust=-.5), #x axis title
+        axis.title.y = element_text(colour="black",size=30), #y axis title
+        #legend.text = element_text(colour="black", size=30), #legend text
+        #legend.title = element_blank(),#legend title
+        #legend.background = element_rect(fill="white"), #legend background color
+        legend.position = "none",
+        #legend.direction= "horizontal",
+        #legend.key = element_blank(),
+        plot.background = element_rect(fill = "white" ), #plot background color
+        panel.background = element_rect(fill = "white"), #panel background color
+        panel.grid.major.y= element_line(colour="black"), #y axis grid line color
+        panel.grid.major.x = element_line(colour=NA),
+        panel.grid.minor = element_line(colour=NA))
+
+
+```
+
+
+
+# Figure 13 - Disturbance in Round 1 2013
+```{r, fig.width=15, fig.height=15}
+cbPalette <- c("#fff7fb","#ece2f0","#d0d1e6","#a6bddb","#67a9cf","#3690c0","#02818a","#016c59", "#014636")
+
+pdist13r1$dutitle = ifelse(pdist13r1$dista=="a","mowed",
+                         ifelse(pdist13r1$dista=="b","disced",
+                            ifelse(pdist13r1$dista=="c","none",
+                                   ifelse(pdist13r1$dista=="g", "planted",
+                                          ifelse(pdist13r1$dista=="f","sprayed","NA")))))
+
+
+ggplot(pdist13r1, aes(x=dutitle, y=Predicted, fill=dutitle)) + 
+  geom_bar(position=position_dodge(), stat="identity", colour="black", size=.8)+
+  geom_errorbar(aes(ymin=Predicted-SE, ymax=Predicted+SE),
+                size=.3,    # Thinner lines
+                width=.2,
+                position=position_dodge(.9),
+                colour="black") +
+  xlab("Habitat Types") +
+  ylab("Sora per Hectare") +
+ # ggtitle("Sora Density by Habitat Type\n and Draw Up Date in 2013 Round 4") +
+  scale_fill_manual(values=cbPalette)+
+  theme(plot.title = element_text(colour="black",size=40), #plot title
+        axis.text.x = element_text(colour="black", size=20), #x axis labels
+        axis.text.y = element_text(colour="black",size=20), #y axis labels
+        axis.title.x = element_text(colour="black", size=30, vjust=-.5), #x axis title
+        axis.title.y = element_text(colour="black",size=30), #y axis title
+        #legend.text = element_text(colour="black", size=30), #legend text
+        #legend.title = element_blank(),#legend title
+        #legend.background = element_rect(fill="white"), #legend background color
+        legend.position = "none",
+        #legend.direction= "horizontal",
+        #legend.key = element_blank(),
+        plot.background = element_rect(fill = "white" ), #plot background color
+        panel.background = element_rect(fill = "white"), #panel background color
+        panel.grid.major.y= element_line(colour="black"), #y axis grid line color
+        panel.grid.major.x = element_line(colour=NA),
+        panel.grid.minor = element_line(colour=NA))
+
+
+```

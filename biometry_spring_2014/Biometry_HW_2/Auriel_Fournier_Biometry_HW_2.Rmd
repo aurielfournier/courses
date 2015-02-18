@@ -1,0 +1,901 @@
+Biometry / Homework 2 / Auriel Fournier / March 8, 2014
+========================================================
+
+```{r, warning=FALSE, message=FALSE}
+setwd("C:/Users/avanderlaar/Dropbox/R/Biometry_HW_2")
+
+library(lattice)
+library(ggplot2)
+library(sciplot)
+library(psych)
+library(sjPlot)
+library(pwr)
+library(compute.es)
+```
+
+I've take the data I was given for this assignment and saved it as a .csv file.
+```{r}
+fish <- read.csv('Biometry_HW_2.csv', header=TRUE)
+```
+
+The head() command shows the first 6 rows of each column
+```{r}
+head(fish)
+```
+
+make sure that all the variables were imported as the right kind of data
+
+```{r}
+str(fish)
+```
+
+look at the very basic stats of each variable
+
+```{r}
+summary(fish)
+```
+
+This provides summary stats by group
+
+SEASON
+```{r}
+describeBy(fish$TOTDENVOL, group=fish$SEASNUM)
+```
+Stream Type
+```{r}
+describeBy(fish$TOTDENVOL, group=fish$STREAMTYPE)
+```
+
+Graphical Examination
+========================================================
+Box Plots
+---------------------------------------------------------
+```{r}
+plot(fish$TOTDENVOL ~ as.factor(fish$SEASNUM), ylab="Fish Density", xlab="Season")
+```
+### Figure 1 - Fish Density by Season
+
+```{r, warning=FALSE, message=FALSE}
+png(filename="seasonbox.png")
+plot(fish$TOTDENVOL ~ as.factor(fish$SEASNUM), ylab="Fish Density", xlab="Season")
+dev.off()
+```
+
+```{r}
+plot(fish$TOTDENVOL ~ as.factor(fish$STREAMTYPE), ylab="Fish Density", xlab="Stream Type")
+```
+### Figure 2 - Fish Density by Stream Type
+
+```{r}
+png(filename="streambox.png")
+plot(fish$TOTDENVOL ~ as.factor(fish$STREAMTYPE), ylab="Fish Density", xlab="Stream Type")
+dev.off()
+```
+Histograms
+-------------------------------------------------------------------
+
+```{r}
+histogram(~TOTDENVOL|SEASNUM, fish, xlab="Fish Density") 
+```
+### Figure 3 - Distribution of Fish Density by Season
+```{r}
+png(filename="seasonhist.png")
+histogram(~TOTDENVOL|SEASNUM, fish, xlab="Fish Density") 
+dev.off()
+```
+
+```{r}
+histogram(~TOTDENVOL|STREAMTYPE, fish, xlab="Fish Density")
+```
+### Figure 4 - Distribution of Fish Density by Stream Type
+```{r}
+png(filename="streamhist.png")
+histogram(~TOTDENVOL|STREAMTYPE, fish, xlab="Fish Density")
+dev.off()
+```
+Square-root Transformation
+------------------------------------------
+
+```{r}
+fish[,71] = sqrt(fish$TOTDENVOL)
+```
+Bar Plots
+---------------
+```{r}
+plot(fish$V71 ~ as.factor(fish$SEASNUM), ylab="Fish Density", xlab="Season")
+```
+### Figure 5 - Square Root Transformed Fish Density by Season
+```{r}
+png(filename="squareboxseason.png")
+plot(fish$V71 ~ as.factor(fish$SEASNUM), ylab="Fish Density", xlab="Season")
+dev.off()
+```
+```{r}
+plot(fish$V71 ~ as.factor(fish$STREAMTYPE), ylab="Fish Density", xlab="Stream Type")
+```
+### Figure 6 - Square Root Transformed Fish Density by Stream Type
+```{r}
+png(filename="squareboxstream.png")
+plot(fish$V71 ~ as.factor(fish$STREAMTYPE), ylab="Fish Density", xlab="Stream Type")
+dev.off()
+```
+Histograms
+-----------------
+```{r}
+histogram(~V71|SEASNUM, fish, xlab="Fish Density") 
+```
+### Figure 7 - Distribution of Square Root Transformed Fish Density by Season
+```{r}
+png(filename="squareseasonhist.png")
+histogram(~V71|SEASNUM, fish, xlab="Fish Density") 
+dev.off()
+```
+```{r}
+histogram(~V71|STREAMTYPE, fish, xlab="Fish Density")
+```
+### Figure 8 - Distribution of Square Root Transformed Fish Density by Stream Type
+```{r}
+png(filename="squarestreamhist.png")
+histogram(~V71|STREAMTYPE, fish, xlab="Fish Density")
+dev.off()
+```
+4th-root transformation
+------------------------
+
+```{r}
+
+fish[,72] = fish$V71^(1/4)
+```
+Bar Plot
+--------------------
+```{r}
+plot(fish$V72 ~ as.factor(fish$SEASNUM), ylab="Fish Density", xlab="Season")
+```
+### Figure 9 - Fourth Root Transformed Fish Density by Season
+```{r}
+png(filename="fourboxseason.png")
+plot(fish$V72 ~ as.factor(fish$SEASNUM), ylab="Fish Density", xlab="Season")
+dev.off()
+```
+
+```{r}
+plot(fish$V72 ~ as.factor(fish$STREAMTYPE), ylab="Fish Density", xlab="Stream Type")
+```
+### Figure 10 -Fourth Root Transformed Fish Density by Stream Type
+```{r}
+png(filename="fourboxstream.png")
+plot(fish$V72 ~ as.factor(fish$STREAMTYPE), ylab="Fish Density", xlab="Stream Type")
+dev.off()
+```
+Histogram
+------------------
+```{r}
+histogram(~V72|SEASNUM, fish, xlab="Fish Density") 
+```
+### Figure 11 - Distribution of Fourth Root Transformed Fish Density by Season
+```{r}
+png(filename="fourhistseason.png")
+histogram(~V72|SEASNUM, fish, xlab="Fish Density")
+dev.off()
+```
+
+```{r}
+histogram(~V72|STREAMTYPE, fish, xlab="Fish Density")
+```
+### Figure 12 - Distribution of Fourth Root Transformed Fish Density by Season
+```{r}
+png(filename="fourhiststream.png")
+histogram(~V72|STREAMTYPE, fish, xlab="Fish Density")
+dev.off()
+
+```
+
+Two-Way ANOVA on Season and Stream Type
+========================================================
+
+```{r}
+model <- lm(V72 ~  STREAMTYPE * SEASNUM, data=fish)
+anova_two <- anova(model)
+```
+
+```{r}
+layout(matrix(c(1,2,3,4),2,2))
+plot(model)
+```
+### Figure 13 - Two-Way Anova Output Graphs
+```{r}
+png(filename="TwoANOVA.png")
+layout(matrix(c(1,2,3,4),2,2))
+plot(model)
+dev.off()
+```
+
+Code to Generate Table
+```{r}
+#sjt.df(anova_two, alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr
+```
+
+### Table 1 - Two Way ANOVA on Stream Type and Season 
+
+`r sjt.df(anova_two, alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr`
+
+Residual Plot
+-------------------
+```{r}
+fish.df <- data.frame(M1_Fit = seq(0,0, length=150), 
+                      M1_Resid = seq(0,0, length=150),
+                      Season = seq(0,0, length=150),
+                      Stream = seq(0,0, length=150))
+                      
+fish.resid = resid(model)
+fish.fitted = fitted(model)
+
+fish.df$M1_Fit = fish.fitted
+fish.df$M1_Resid = fish.resid
+fish.df$Season = fish$SEASNUM  
+fish.df$Stream = fish$STREAMNUM
+
+ggplot(fish.df, aes(M1_Fit, M1_Resid, colour =Stream)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of Two-way Anova")
+```
+### Figure 14 - Residual Plot from Two Way ANOVA on Stream Type and Season 
+```{r}
+png(filename="TwoANOVAResidual.png")
+ggplot(fish.df, aes(M1_Fit, M1_Resid, colour =Stream)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of Two-way Anova")
+dev.off()
+```
+
+Interaction Plot
+-------------------------
+```{r}
+
+lineplot.CI(SEASNUM,V72, group =STREAMTYPE , data =fish, cex = 1.5,
+            xlab = "Season", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            col = c("blue","red"), pch = c(16,16))
+```
+### Figure 15 - Interaction Plot of Stream Type and Season from Two Way Anova
+```{r}
+png(filename="TwoANOVAInteraction.png")
+lineplot.CI(SEASNUM,V72, group =STREAMTYPE , data =fish, cex = 1.5,
+            xlab = "Season", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            col = c("blue","red"), pch = c(16,16))
+dev.off()
+
+
+```
+
+One-Way ANOVA On Stream Type
+========================================================
+
+```{r}
+stream <- lm(V72 ~  STREAMTYPE, data=fish) 
+
+```
+
+```{r}
+layout(matrix(c(1,2,3,4),2,2))
+plot(stream)
+```
+### Figure 16 - ANOVA Output Plots for One Way Anova on Stream Type
+```{r}
+png(filename="OneANOVAStream.png")
+layout(matrix(c(1,2,3,4),2,2))
+plot(stream)
+dev.off()
+```
+
+Code to generate table
+```{r}
+#sjt.df(anova(stream), alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr
+
+```
+### Table 2 - One Way Anova on Stream Type
+
+`r sjt.df(anova(stream), alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr`
+
+Residual Plot
+--------------------
+```{r}
+stream.df <- data.frame(M1_Fit = seq(0,0, length=150), 
+                      M1_Resid = seq(0,0, length=150),
+                      Stream = seq(0,0, length=150))
+
+stream.resid = resid(stream)
+stream.fitted = fitted(stream)
+
+stream.df$M1_Fit = stream.fitted
+stream.df$M1_Resid = stream.resid
+stream.df$Stream = fish$STREAMNUM
+
+ggplot(stream.df, aes(M1_Fit, M1_Resid, colour =Stream)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Stream Type")
+```
+### Figure 17 - Residuals from One Way Anova on STream Type
+```{r}
+png(filename="OneANOVAStreamResidual.png")
+ggplot(stream.df, aes(M1_Fit, M1_Resid, colour =Stream)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Stream Type")
+dev.off()
+
+```
+
+Interaction Plot
+-----------------
+```{r}
+lineplot.CI(STREAMTYPE,V72, data =fish, cex = 1.5,
+            xlab = "Season", ylab = "means", cex.lab = 1.2, x.leg = 1,
+             pch = c(16,16))
+```
+### Figure 18 - Interaction Plot from One Way Anova on Stream Type
+```{r}
+png(filename="OneANOVAStreamInteraction.png")
+lineplot.CI(STREAMTYPE,V72, data =fish, cex = 1.5,
+            xlab = "Season", ylab = "means", cex.lab = 1.2, x.leg = 1,
+             pch = c(16,16))
+dev.off()
+
+```
+
+One-Way ANOVA On Season With Tukey's Test
+========================================================
+
+Now lets look at a One-way ANOVA on season
+
+```{r}
+season <- lm(V72 ~  SEASNUM, data=fish) 
+```
+
+```{r}
+layout(matrix(c(1,2,3,4),2,2))
+plot(season)
+```
+### Figure 19 - Output Graphs from One way Anova on Season
+```{r}
+png(filename="OneANOVA.png")
+layout(matrix(c(1,2,3,4),2,2))
+plot(season)
+dev.off()
+```
+
+Code to generate table
+```{r}
+#sjt.df(anova(season), alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr
+
+```
+### Table 3 - One Way Anova on Season
+
+`r sjt.df(anova(season), alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr`
+Residual Plot
+-----------------
+```{r}
+season.df <- data.frame(M1_Fit = seq(0,0, length=150), 
+                        M1_Resid = seq(0,0, length=150),
+                        Season = seq(0,0, length=150))
+
+season.resid = resid(season)
+season.fitted = fitted(season)
+
+season.df$M1_Fit = season.fitted
+season.df$M1_Resid = season.resid
+season.df$Season = fish$SEASNUM
+
+ggplot(season.df, aes(M1_Fit, M1_Resid, colour =Season)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Season")
+```
+### Figure 20 - Residuals from One Way Anova on Season
+```{r}
+png(filename="OneANOVASeasonResidual.png")
+ggplot(season.df, aes(M1_Fit, M1_Resid, colour =Season)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Season")
+
+dev.off()
+
+
+```
+
+
+Interaction Plot
+-------------------
+```{r}
+lineplot.CI(SEASNUM,V72, data =fish, cex = 1.5,
+            xlab = "Season", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            pch = c(16,16))
+```
+### Figure 21 - Interaction Plot fron One Way Anova on Season
+```{r}
+png(filename="OneANOVASeasonInteraction.png")
+lineplot.CI(SEASNUM,V72, data =fish, cex = 1.5,
+            xlab = "Season", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            pch = c(16,16))
+dev.off()
+
+```
+
+
+```{r}
+fish[,3] = factor(fish$SEASNUM)
+
+seasonanova <- aov(fish$V72 ~ fish$SEASNUM)
+TukSeason = TukeyHSD(x=seasonanova, conf.level=0.95)
+```
+###Table 4 - Tukey Test Output Table for ONe Way Anova on Season
+```{r}
+TukSeason
+```
+
+One Way Anova on Season for Boston Mountains With Tukey's Test
+========================================================
+
+```{r}
+Boston = fish[fish$STREAMTYPE=='1',]
+
+boston <- lm(V72 ~  SEASNUM, data=Boston) 
+```
+
+```{r}
+layout(matrix(c(1,2,3,4),2,2))
+plot(boston)
+```
+### Figure 22 - Outplut Graphs for One Way Anova on Season in Boston Mountains
+```{r}
+png(filename="OneANOVABoston.png")
+layout(matrix(c(1,2,3,4),2,2))
+plot(boston)
+dev.off()
+```
+
+Code to generate table
+```{r}
+#sjt.df(anova(boston), alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr
+
+```
+### Table 5 - One Way ANOVA on Season in Boston Mountains
+
+`r sjt.df(anova(boston), alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr`
+Residual Plot
+-----------------
+```{r}
+boston.df <- data.frame(M1_Fit = seq(0,0, length=73), 
+                        M1_Resid = seq(0,0, length=73),
+                        Season = seq(0,0, length=73))
+
+boston.resid = resid(boston)
+boston.fitted = fitted(boston)
+
+boston.df$M1_Fit = boston.fitted
+boston.df$M1_Resid = boston.resid
+boston.df$Season = Boston$SEASNUM
+
+ggplot(boston.df, aes(M1_Fit, M1_Resid, colour =Season)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Season")
+```
+### Figure 23 - Residuals from One Way Anova on Season in Boston Mountains
+```{r}
+png(filename="OneANOVASeasonResidualBoston.png")
+ggplot(boston.df, aes(M1_Fit, M1_Resid, colour =Season)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Season")
+
+dev.off()
+
+
+```
+
+
+Interaction Plot
+-------------------
+```{r}
+lineplot.CI(SEASNUM,V72, data =Boston, cex = 1.5,
+            xlab = "Season", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            pch = c(16,16))
+```
+### Figure 24 - Interaction Plot of One Way ANOVA on Season in Boston Mountains
+```{r}
+png(filename="OneANOVASeasonInteractionBoston.png")
+lineplot.CI(SEASNUM,V72, data =Boston, cex = 1.5,
+            xlab = "Season", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            pch = c(16,16))
+dev.off()
+
+```
+
+```{r}
+Boston[,3] = factor(Boston$SEASNUM)
+
+bostonanova <- aov(Boston$V72 ~ Boston$SEASNUM)
+TukBoston = TukeyHSD(x=bostonanova, conf.level=0.95)
+```
+###Table 6 - Tukey Test from One Way Anova on Season in Boston Mountains
+```{r}
+TukBoston
+```
+
+One Way Anova on Season for Ozark Highlands with Tukey's Test
+========================================================
+
+```{r}
+Ozark = fish[fish$STREAMTYPE=='2',]
+
+ozark <- lm(V72 ~  SEASNUM, data=Ozark) 
+```
+
+```{r}
+layout(matrix(c(1,2,3,4),2,2))
+plot(ozark)
+```
+### Figure 25 - Output Graphs from One Way ANOVA on Season in Ozarks
+```{r}
+png(filename="OneANOVAOzark.png")
+layout(matrix(c(1,2,3,4),2,2))
+plot(ozark)
+dev.off()
+```
+
+Code to generate table
+```{r}
+#sjt.df(anova(ozark), alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr
+
+```
+### Table 7 - Output from One Way ANOVA on Season in Ozarks
+
+`r sjt.df(anova(ozark), alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr`
+Residual Plot
+-----------------
+```{r}
+ozark.df <- data.frame(M1_Fit = seq(0,0, length=77), 
+                        M1_Resid = seq(0,0, length=77),
+                        Season = seq(0,0, length=77))
+
+ozark.resid = resid(ozark)
+ozark.fitted = fitted(ozark)
+
+ozark.df$M1_Fit = ozark.fitted
+ozark.df$M1_Resid = ozark.resid
+ozark.df$Season = Ozark$SEASNUM
+
+ggplot(ozark.df, aes(M1_Fit, M1_Resid, colour =Season)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Season")
+```
+### Figure 26 - Residuals from One Way ANOVA on Season in Ozarks
+```{r}
+png(filename="OneANOVASeasonResidualOzark.png")
+ggplot(ozark.df, aes(M1_Fit, M1_Resid, colour =Season)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Season")
+
+dev.off()
+
+
+```
+
+
+Interaction Plot
+-------------------
+```{r}
+lineplot.CI(SEASNUM,V72, data =Ozark, cex = 1.5,
+            xlab = "Season", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            pch = c(16,16))
+```
+### Figure 27 - Interaction Plot from One Way ANOVA on Season in Ozarks
+```{r}
+png(filename="OneANOVASeasonInteractionOzark.png")
+lineplot.CI(SEASNUM,V72, data =Ozark, cex = 1.5,
+            xlab = "Season", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            pch = c(16,16))
+dev.off()
+
+```
+
+
+```{r}
+Ozark[,3] = factor(Ozark$SEASNUM)
+
+ozarkanova <- aov(Ozark$V72 ~ Ozark$SEASNUM)
+TukOzark = TukeyHSD(x=ozarkanova, conf.level=0.95)
+```
+###Table 8 - Tukey Test Output from One Way ANOVA on Season in Ozarks
+```{r}
+TukOzark
+```
+
+One Way Anova on Stream Type for Spring
+========================================================
+
+
+```{r}
+Spring = fish[fish$SEASNUM=='4',]
+
+spring <- lm(V72 ~  STREAMTYPE, data=Spring) 
+```
+
+```{r}
+layout(matrix(c(1,2,3,4),2,2))
+plot(spring)
+```
+### Figure 28 - Output Graphs from One Way ANOVA on Stream Type during Spring
+```{r}
+png(filename="OneANOVASpring.png")
+layout(matrix(c(1,2,3,4),2,2))
+plot(spring)
+dev.off()
+```
+
+Code to generate table
+```{r}
+#sjt.df(anova(spring), alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr
+
+```
+### Table 9 - Results of One Way ANOVA on Stream Type during Spring
+
+`r sjt.df(anova(spring), alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr`
+Residual Plot
+-----------------
+```{r}
+spring.df <- data.frame(M1_Fit = seq(0,0, length=36), 
+                        M1_Resid = seq(0,0, length=36),
+                        Season = seq(0,0, length=36))
+
+spring.resid = resid(spring)
+spring.fitted = fitted(spring)
+
+spring.df$M1_Fit = spring.fitted
+spring.df$M1_Resid = spring.resid
+spring.df$StreamType = Spring$STREAMTYPE
+
+ggplot(spring.df, aes(M1_Fit, M1_Resid, colour =StreamType)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Season")
+```
+### Figure 29 - Interaction Plot from One Way ANOVA on Stream Type during Spring
+```{r}
+png(filename="OneANOVASeasonResidualSpring.png")
+ggplot(spring.df, aes(M1_Fit, M1_Resid, colour =StreamType)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Season")
+
+dev.off()
+
+
+```
+
+
+Interaction Plot
+-------------------
+```{r}
+lineplot.CI(STREAMTYPE,V72, data =Spring, cex = 1.5,
+            xlab = "Stream Type", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            pch = c(16,16))
+```
+### Figure 30 - Interaction Plot from One Way ANOVA on Stream Type during Spring
+```{r}
+png(filename="OneANOVASeasonInteractionSpring.png")
+lineplot.CI(STREAMTYPE,V72, data =Spring, cex = 1.5,
+            xlab = "Stream Type", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            pch = c(16,16))
+dev.off()
+
+```
+
+One Way Anova on Stream Type for Early Summer
+========================================================
+
+
+```{r}
+Early = fish[fish$SEASNUM=='6',]
+
+early <- lm(V72 ~  STREAMTYPE, data=Early) 
+```
+
+```{r}
+layout(matrix(c(1,2,3,4),2,2))
+plot(early)
+```
+### Figure 31 - Output graphs from One Way ANOVA on Stream Type during Early Summer
+```{r}
+png(filename="OneANOVAEarly.png")
+layout(matrix(c(1,2,3,4),2,2))
+plot(early)
+dev.off()
+```
+
+Code to generate table
+```{r}
+#sjt.df(anova(early), alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr
+
+```
+### Table 10 - Output from One Way ANOVA on Stream Type during Early Summer
+
+`r sjt.df(anova(early), alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr`
+Residual Plot
+-----------------
+```{r}
+early.df <- data.frame(M1_Fit = seq(0,0, length=41), 
+                        M1_Resid = seq(0,0, length=41),
+                        Season = seq(0,0, length=41))
+
+early.resid = resid(early)
+early.fitted = fitted(early)
+
+early.df$M1_Fit = early.fitted
+early.df$M1_Resid = early.resid
+early.df$StreamType = Early$STREAMTYPE
+
+ggplot(early.df, aes(M1_Fit, M1_Resid, colour =StreamType)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Season")
+```
+### Figure 32 - Residual Plot from One Way ANOVA on Stream Type during Early Summer
+```{r}
+png(filename="OneANOVASeasonResidualEarly.png")
+ggplot(early.df, aes(M1_Fit, M1_Resid, colour =StreamType)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Season")
+
+dev.off()
+
+
+```
+
+
+Interaction Plot
+-------------------
+```{r}
+lineplot.CI(STREAMTYPE,V72, data =Early, cex = 1.5,
+            xlab = "Stream Type", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            pch = c(16,16))
+```
+### Figure 33 - Interaction Plot from One Way ANOVA on Stream Type during Early Summer
+```{r}
+png(filename="OneANOVASeasonInteractionEarly.png")
+lineplot.CI(STREAMTYPE,V72, data =Early, cex = 1.5,
+            xlab = "Stream Type", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            pch = c(16,16))
+dev.off()
+
+```
+
+One Way Anova on Stream Type for Late Summer
+========================================================
+
+```{r}
+Late = fish[fish$SEASNUM=='8',]
+
+late <- lm(V72 ~  STREAMTYPE, data=Late) 
+```
+
+```{r}
+layout(matrix(c(1,2,3,4),2,2))
+plot(late)
+```
+### Figure 34 - Output Graphs from One Way ANOVA on Stream Type in Late Summer
+```{r}
+png(filename="OneANOVALate.png")
+layout(matrix(c(1,2,3,4),2,2))
+plot(late)
+dev.off()
+```
+
+Code to generate table
+```{r}
+#sjt.df(anova(late), alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr
+
+```
+### Table 11 - Output from One Way ANOVA on Stream Type in Late Summer
+
+`r sjt.df(anova(late), alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr`
+Residual Plot
+-----------------
+```{r}
+late.df <- data.frame(M1_Fit = seq(0,0, length=38), 
+                        M1_Resid = seq(0,0, length=38),
+                        Season = seq(0,0, length=38))
+
+late.resid = resid(late)
+late.fitted = fitted(late)
+
+late.df$M1_Fit = late.fitted
+late.df$M1_Resid = late.resid
+late.df$StreamType = Late$STREAMTYPE
+
+ggplot(late.df, aes(M1_Fit, M1_Resid, colour =StreamType)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Season")
+```
+### Figure 35 - Residuals Plot from One Way ANOVA on Stream Type in Late Summer
+```{r}
+png(filename="OneANOVASeasonResidualLate.png")
+ggplot(late.df, aes(M1_Fit, M1_Resid, colour =StreamType)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Season")
+
+dev.off()
+
+
+```
+
+
+Interaction Plot
+-------------------
+```{r}
+lineplot.CI(STREAMTYPE,V72, data =Late, cex = 1.5,
+            xlab = "Stream Type", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            pch = c(16,16))
+```
+### Figure 36 - Interaction Plot from One Way ANOVA on Stream Type in Late Summer
+```{r}
+png(filename="OneANOVASeasonInteractionLate.png")
+lineplot.CI(STREAMTYPE,V72, data =Late, cex = 1.5,
+            xlab = "Stream Type", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            pch = c(16,16))
+dev.off()
+
+```
+
+One Way Anova on Stream Type for Fall
+========================================================
+
+
+```{r}
+Fall = fish[fish$SEASNUM=='10',]
+
+fall <- lm(V72 ~  STREAMTYPE, data=Fall) 
+```
+
+```{r}
+layout(matrix(c(1,2,3,4),2,2))
+plot(fall)
+```
+### Figure 37 - Output graphs from One Way Anova on Stream Type during the Fall
+```{r}
+png(filename="OneANOVAFall.png")
+layout(matrix(c(1,2,3,4),2,2))
+plot(fall)
+dev.off()
+```
+
+Code to generate table
+```{r}
+#sjt.df(anova(fall), alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr
+
+```
+### Table 12 - Results of One Way ANOVA on Stream Type during the Fall
+
+`r sjt.df(anova(fall), alternateRowColors=TRUE,  no.output=TRUE, describe=FALSE)$knitr`
+Residual Plot
+-----------------
+```{r}
+fall.df <- data.frame(M1_Fit = seq(0,0, length=35), 
+                        M1_Resid = seq(0,0, length=35),
+                        StreamType = seq(0,0, length=35))
+
+fall.resid = resid(fall)
+fall.fitted = fitted(fall)
+
+fall.df$M1_Fit = fall.fitted
+fall.df$M1_Resid = fall.resid
+fall.df$StreamType = Fall$STREAMTYPE
+
+ggplot(fall.df, aes(M1_Fit, M1_Resid, colour =StreamType)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Season")
+```
+### Figure 38 - Residuals from One Way ANOVA on Stream Type during the Fall
+```{r}
+png(filename="OneANOVASeasonResidualFall.png")
+ggplot(fall.df, aes(M1_Fit, M1_Resid, colour =StreamType)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Season")
+
+dev.off()
+
+
+```
+
+
+Interaction Plot
+-------------------
+```{r}
+lineplot.CI(STREAMTYPE,V72, data =Fall, cex = 1.5,
+            xlab = "Stream Type", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            pch = c(16,16))
+```
+### Figure 39 - Interaction Plot on One Way Anova on Stream Type during the Fall
+```{r}
+png(filename="OneANOVASeasonInteractionFall.png")
+lineplot.CI(STREAMTYPE,V72, data =Fall, cex = 1.5,
+            xlab = "Stream Type", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            pch = c(16,16))
+dev.off()
+
+```

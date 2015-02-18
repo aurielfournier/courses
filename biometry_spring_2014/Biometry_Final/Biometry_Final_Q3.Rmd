@@ -1,0 +1,128 @@
+
+# Biometry Final Question 3
+```{r}
+
+
+#required libraries
+library(ggplot2)
+library(devtools)
+library(digest)
+library(gridExtra)
+
+#set working directory
+setwd("~/Downloads")
+
+data3 = read.csv("final_q3.csv",header=T)
+
+#subset out the boston mountains
+boston = subset(data3, data3$streamtype==1)
+
+#subset just variables of interest
+boston = subset(boston, select=c("season","all","richness", "stream"))
+
+
+#determine number of levels in each factor
+unique(boston$stream) # Three Levels (Bear, Cave, Falling)
+unique(boston$season) # Four levels (April, June, August and October)
+
+plot(boston$richness, boston$all)
+
+par(mfrow=c(1,2))
+hist(boston$richness) #mostly normal distribution
+hist(boston$all) #heavily skewed
+
+
+boston$all2 = boston$all^(1/2)
+
+par(mfrow=c(1,2))
+hist(boston$richness) #mostly normal distribution
+hist(boston$all2) #skewed
+
+boston$all4 = boston$all^(1/4)
+
+par(mfrow=c(1,2))
+hist(boston$richness) #mostly normal distribution
+hist(boston$all4) #mostly normal distribution
+
+#we'll use these two gariables, richness and all4
+
+#histograms looking at stream
+
+#histograms
+p1 = ggplot() +  geom_histogram(data=boston, aes(x=all4, fill=stream), position=position_dodge())
+#this is fine except for those 0's
+#so maybe we'd need to consider a GLM and using a different distribution, but we're just going 
+#to go with it
+p2= ggplot() +   geom_histogram(data=boston, aes(x=richness, fill=stream), position=position_dodge())
+#this looks much improved
+grid.arrange(p1,p2,ncol=1)
+#these don't totally overlap but are probably ok
+
+#histograms looking at season
+p3 = ggplot() +  geom_histogram(data=boston, aes(x=all4, fill=season), position=position_dodge())
+#this is fine except for those 0's
+#so maybe we'd need to consider a GLM and using a different distribution, but we're just going 
+#to go with it
+p4= ggplot() +   geom_histogram(data=boston, aes(x=richness, fill=season), position=position_dodge())
+#this looks much improved
+grid.arrange(p3,p4,ncol=1)
+
+#these seem pretty well distributed across the ranges of all and richness values
+
+
+#box plots to look at distribution of variances for stream
+p5 = ggplot()+  geom_boxplot(data=boston, aes(x=stream, y=all4, fill=stream))
+#alrightly
+p6 = ggplot()+  geom_boxplot(data=boston, aes(x=stream, y=richness, fill=stream))
+#looks good
+grid.arrange(p5,p6,ncol=1)
+#there are two outliers in Bear Creek and two in Falling Creek
+
+
+#box plots to look at distribution of variances for season
+p7 = ggplot()+  geom_boxplot(data=boston, aes(x=season, y=all4, fill=season))
+#alrightly
+p8 = ggplot()+  geom_boxplot(data=boston, aes(x=season, y=richness, fill=season))
+#looks good
+grid.arrange(p7,p8,ncol=1)
+#there is an outlier in April
+
+
+lm1 = lm(all4 ~ stream, data=boston) 
+lm2 = lm(richness ~ stream, data=boston) 
+lm3 = lm(all4 ~ season, data=boston) 
+lm4 = lm(richness ~ season, data=boston)
+
+summary(lm1)#Falling is significant, R2 is .4
+summary(lm2)#Falling is significant R2 is .2
+summary(lm3)#August and October are signfiicant R2 is .1
+summary(lm4) #August is significant R2 is .06
+#so none of them are actually good fits, but there are significant differences in each case
+
+#look at residual plots
+par(mfrow=c(2,2))
+plot(lm1)
+#normal QQ plot deviates
+#there is clumping in the residual plot
+par(mfrow=c(2,2))
+plot(lm2)
+#normal QQ plot deviates
+par(mfrow=c(2,2))
+plot(lm3)
+#normal QQ plot deviates
+#there is clumping in the residual plot
+par(mfrow=c(2,2))
+plot(lm4)
+#normal QQ plot deviates
+#there is clumping in the residual plot
+
+
+#RUN THE MANOVA
+manova = manova(cbind(all4,richness) ~ stream + season, data=boston)
+
+summary(manova) #both season and stream are significant, cool
+
+#pull out the residuals, check them out
+res = manova$residuals
+plot(res) #that actually looks pretty good, no wedges
+```

@@ -1,0 +1,54 @@
+data = read.csv("reglab.csv", header=TRUE) #reads in the file 
+datasub = data[c("Area", "Cover", "Canopy", "Depth", "Substrate", "Totdens", "Richness", "Volume")] #subsets out the columns that we are interested in
+datana = na.omit(datasub) #list wise deleation of missing values
+
+library(Hmisc) #for the correlation stuff
+library(lmodel2) # for the model 2 Regression
+
+#correlation matrix
+plot(datana)
+#box plots of all variables
+boxplot(datana)
+#histograms
+hist(datana$Area)
+hist(datana$Cover)
+hist(datana$Canopy)
+hist(datana$Depth)
+hist(datana$Substrate)
+hist(datana$Totdens)
+hist(datana$Richness)
+
+#these variables needed to be transformed, 
+datana$Depth = datana$Depth^(1/4)
+datana$Area = datana$Area^(1/4)
+datana$Cover = datana$Cover^(1/2)
+datana$Totdens = datana$Totdens^(1/8)
+datana$Volume = datana$Volume^(1/4)
+
+#does a pearson correlation
+cor = rcorr(as.matrix(datana), type="pearson")
+cor
+#these are significant
+# Area - Cover
+# Area - Depth
+# Cover - Substrate
+# Canopy - Totdens
+# Depth - Substate
+# Depth - Totdens
+# Totdens - Richness
+
+model1 = lm(Volume ~ Totdens, data=datana)
+model2 = lm(Volume ~ Richness, data=datana)
+summary(model1)
+summary(model2)
+plot(model1)
+plot(model2)
+plot(model1$model)
+plot(model2$model)
+
+###
+##MODEL 2
+##
+
+mod2 = lmodel2(Volume ~ Totdens, data=datana, range.y="relative", range.x="relative", nperm=99)
+mod2

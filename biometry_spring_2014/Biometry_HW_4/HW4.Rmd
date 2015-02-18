@@ -1,0 +1,63 @@
+# biometry
+# homework 4
+# ancova
+# Auriel Fournier
+# April 28, 2014
+
+```{r}
+
+library(Hmisc) #for the correlation stuff
+library(AICcmodavg)#for AIC ranking
+library(ggplot2) #for graphing
+library(reshape) #for reshaping/melting 
+
+# set working directory
+setwd("C:/Users/avanderlaar/Dropbox/R/Biometry_HW_4")
+
+# read in homework file
+hw4 = read.csv('hw4.csv')
+
+# the assignment says that meal_amount is categorical, so this makes it a factor
+hw4$meal = factor(hw4$meal_amount, levels=c("5","10","15","20"))
+
+
+hw4$age_f = factor(hw4$age, levels=c("1","2","4","5","6","7","8","9","10","11","12"))
+
+# assumption of homogeneity of variance
+ggplot()+  geom_boxplot(data=hw4, aes(x=meal, y=duckling_weight, colour=meal))+  geom_boxplot(data=hw4, aes(x=age, y=duckling_weight))
+# ok this doesn't look awful. 
+
+ggplot() +  geom_histogram(data=hw4, aes(x=duckling_weight), position=position_dodge()) 
+# ok so we have a skewed distribution
+
+hw4$duck2 = hw4$duckling_weight^(1/4)
+
+ggplot() +  geom_histogram(data=hw4, aes(x=duck2), position=position_dodge()) 
+# this is still funky, but is a bit better
+ggplot()+  geom_boxplot(data=hw4, aes(x=meal, y=duck2, colour=meal))+  geom_boxplot(data=hw4, aes(x=age, y=duck2))
+# and this still looks ok
+
+# One Way ANOVAS
+lm1 = lm(data=hw4, duck2~age) #is significant
+summary(lm1)
+lm2 = lm(data=hw4, duck2~meal) # is not significant
+summary(lm2)
+
+# Look at the interaction between the two predictors
+lm3 = lm(data=hw4, age~meal) # not significant 
+summary(lm3)
+
+# linearity assumptions
+ggplot() + geom_point(data=hw4, aes(x=age, y=duckling_weight, colour=meal))+
+  geom_line(data=hw4, aes(x=age, y=duckling_weight, colour=meal))
+
+lm4 = lm(data=hw4, duck2 ~ age+meal)
+summary(lm4)
+
+par(mfrow=c(2,2))
+plot(lm4)
+
+# check for paralell slopes
+lm5 = lm(data=hw4, duck2~ age*meal)
+summary(lm5) 
+```

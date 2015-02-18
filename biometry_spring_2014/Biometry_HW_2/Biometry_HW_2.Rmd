@@ -1,0 +1,424 @@
+Biometry / Homework 2 / Auriel Fournier / March 6, 2014
+========================================================
+
+This is an R Markdown document. It allows me to write up my thoughts and also include the R script and outputs in one html document so that others can see exactly what I did, without having to open up R. It also allows for completely reproduceable homework if you do run the .Rmd document yourself. 
+
+So first we have to set the working directory and get all the required packages loaded
+```{r}
+#When working on my mac
+
+#setwd("~/Dropbox/R/Biometry_HW_2")
+
+#when working on my desktop at school
+setwd("C:/Users/avanderlaar/Dropbox/R/Biometry_HW_2")
+
+library(lattice)
+library(ggplot2)
+library(sciplot)
+library(psych)
+```
+
+Then we import the data. In this case I've take the data I was given for this assignment and saved it as a .csv file.
+```{r}
+fish <- read.csv('Biometry_HW_2.csv', header=TRUE)
+```
+
+First we want to check and make sure the data imported correctly and also take a look at it and see what is included.
+
+The head() command shows the first 6 rows of each column
+```{r}
+head(fish)
+```
+
+Then you always want to check the structure of the data, to make sure that all the variables were imported as the right kind of data
+
+```{r}
+str(fish)
+```
+
+Then you often want to look at the very basic stats of each variable, and you can do that via this command
+
+```{r}
+summary(fish)
+```
+
+This provides summary stats by group
+
+SEASON
+```{r}
+describeBy(fish$TOTDENVOL, group=fish$SEASNUM)
+```
+Stream Type
+```{r}
+describeBy(fish$TOTDENVOL, group=fish$STREAMTYPE)
+```
+
+Graphical Examination
+========================================================
+
+Box Plots
+---------------------------------------------------------
+```{r}
+plot(fish$TOTDENVOL ~ as.factor(fish$SEASNUM), ylab="Fish Density", xlab="Season")
+```
+### Figure 1
+
+```{r}
+png(filename="seasonbox.png")
+plot(fish$TOTDENVOL ~ as.factor(fish$SEASNUM), ylab="Fish Density", xlab="Season")
+dev.off()
+```
+
+```{r}
+plot(fish$TOTDENVOL ~ as.factor(fish$STREAMTYPE), ylab="Fish Density", xlab="Stream Type")
+```
+### Figure 2
+
+```{r}
+png(filename="streambox.png")
+plot(fish$TOTDENVOL ~ as.factor(fish$STREAMTYPE), ylab="Fish Density", xlab="Stream Type")
+dev.off()
+```
+
+Histograms
+-------------------------------------------------------------------
+
+```{r}
+histogram(~TOTDENVOL|SEASNUM, fish, xlab="Fish Density") 
+```
+### Figure 3
+```{r}
+png(filename="seasonhist.png")
+histogram(~TOTDENVOL|SEASNUM, fish, xlab="Fish Density") 
+dev.off()
+```
+
+```{r}
+histogram(~TOTDENVOL|STREAMTYPE, fish, xlab="Fish Density")
+```
+### Figure 4
+```{r}
+png(filename="streamhist.png")
+histogram(~TOTDENVOL|STREAMTYPE, fish, xlab="Fish Density")
+dev.off()
+```
+
+Square-root Transformation
+------------------------------------------
+
+```{r}
+fish[,71] = sqrt(fish$TOTDENVOL)
+```
+
+Bar Plots
+---------------
+```{r}
+plot(fish$V71 ~ as.factor(fish$SEASNUM), ylab="Fish Density", xlab="Season")
+```
+### Figure 5
+```{r}
+png(filename="squareboxseason.png")
+plot(fish$V71 ~ as.factor(fish$SEASNUM), ylab="Fish Density", xlab="Season")
+dev.off()
+```
+```{r}
+plot(fish$V71 ~ as.factor(fish$STREAMTYPE), ylab="Fish Density", xlab="Stream Type")
+```
+### Figure 6
+```{r}
+png(filename="squareboxstream.png")
+plot(fish$V71 ~ as.factor(fish$STREAMTYPE), ylab="Fish Density", xlab="Stream Type")
+dev.off()
+```
+
+Histograms
+-----------------
+```{r}
+histogram(~V71|SEASNUM, fish, xlab="Fish Density") 
+```
+### Figure 7
+```{r}
+png(filename="squareseasonhist.png")
+histogram(~V71|SEASNUM, fish, xlab="Fish Density") 
+dev.off()
+```
+```{r}
+histogram(~V71|STREAMTYPE, fish, xlab="Fish Density")
+```
+### Figure 8
+```{r}
+png(filename="squarestreamhist.png")
+histogram(~V71|STREAMTYPE, fish, xlab="Fish Density")
+dev.off()
+```
+
+4th-root transformation
+------------------------
+
+```{r}
+
+fish[,72] = fish$V71^(1/4)
+```
+Bar Plot
+--------------------
+```{r}
+plot(fish$V72 ~ as.factor(fish$SEASNUM), ylab="Fish Density", xlab="Season")
+```
+### Figure 9
+```{r}
+png(filename="fourboxseason.png")
+plot(fish$V72 ~ as.factor(fish$SEASNUM), ylab="Fish Density", xlab="Season")
+dev.off()
+```
+
+```{r}
+plot(fish$V72 ~ as.factor(fish$STREAMTYPE), ylab="Fish Density", xlab="Stream Type")
+```
+### Figure 10
+```{r}
+png(filename="fourboxstream.png")
+plot(fish$V72 ~ as.factor(fish$STREAMTYPE), ylab="Fish Density", xlab="Stream Type")
+dev.off()
+```
+Histogram
+------------------
+```{r}
+histogram(~V72|SEASNUM, fish, xlab="Fish Density") 
+```
+### Figure 11
+```{r}
+png(filename="fourhistseason.png")
+histogram(~V72|SEASNUM, fish, xlab="Fish Density")
+dev.off()
+```
+
+```{r}
+histogram(~V72|STREAMTYPE, fish, xlab="Fish Density")
+```
+### Figure 12
+```{r}
+png(filename="fourhiststream.png")
+histogram(~V72|STREAMTYPE, fish, xlab="Fish Density")
+dev.off()
+
+```
+
+Two-Way ANOVA
+========================================================
+
+Two-Way ANOVA on our data looking at the interaction between season and stream type with our fourth-root transformed fish density variable as the response 
+
+```{r}
+options(contrasts = c("contr.sum","contr.poly")) 
+model <- lm(V72 ~  STREAMTYPE * SEASNUM, data=fish)
+anova_two <- anova(model)
+```
+
+```{r}
+layout(matrix(c(1,2,3,4),2,2))
+plot(model)
+```
+### Figure 13
+```{r}
+png(filename="TwoANOVA.png")
+layout(matrix(c(1,2,3,4),2,2))
+plot(model)
+dev.off()
+```
+
+
+### Table 1
+```{r}
+print(anova_two)
+```
+
+Residual Plot
+-------------------
+```{r}
+fish.df <- data.frame(M1_Fit = seq(0,0, length=150), 
+                      M1_Resid = seq(0,0, length=150),
+                      Season = seq(0,0, length=150),
+                      Stream = seq(0,0, length=150))
+                      
+fish.resid = resid(model)
+fish.fitted = fitted(model)
+
+fish.df$M1_Fit = fish.fitted
+fish.df$M1_Resid = fish.resid
+fish.df$Season = fish$SEASNUM  
+fish.df$Stream = fish$STREAMNUM
+
+ggplot(fish.df, aes(M1_Fit, M1_Resid, colour =Stream)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of Two-way Anova")
+```
+### Figure 14
+```{r}
+png(filename="TwoANOVAResidual.png")
+ggplot(fish.df, aes(M1_Fit, M1_Resid, colour =Stream)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of Two-way Anova")
+dev.off()
+```
+
+Interaction Plot
+-------------------------
+```{r}
+
+lineplot.CI(SEASNUM,V72, group =STREAMTYPE , data =fish, cex = 1.5,
+            xlab = "Season", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            col = c("blue","red"), pch = c(16,16))
+```
+### Figure 15
+```{r}
+png(filename="TwoANOVAInteraction.png")
+lineplot.CI(SEASNUM,V72, group =STREAMTYPE , data =fish, cex = 1.5,
+            xlab = "Season", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            col = c("blue","red"), pch = c(16,16))
+dev.off()
+
+
+```
+
+
+One-Way ANOVA On Stream
+========================================================
+
+```{r}
+options(contrasts = c("contr.sum","contr.poly")) 
+stream <- lm(V72 ~  STREAMTYPE, data=fish) 
+
+```
+
+```{r}
+layout(matrix(c(1,2,3,4),2,2))
+plot(stream)
+```
+### Figure 16
+```{r}
+png(filename="OneANOVAStream.png")
+layout(matrix(c(1,2,3,4),2,2))
+plot(stream)
+dev.off()
+```
+
+### Table 2 
+```{r}
+print(anova(stream))
+```
+
+Residual Plot
+--------------------
+```{r}
+stream.df <- data.frame(M1_Fit = seq(0,0, length=150), 
+                      M1_Resid = seq(0,0, length=150),
+                      Stream = seq(0,0, length=150))
+
+stream.resid = resid(stream)
+stream.fitted = fitted(stream)
+
+stream.df$M1_Fit = stream.fitted
+stream.df$M1_Resid = stream.resid
+stream.df$Stream = fish$STREAMNUM
+
+ggplot(stream.df, aes(M1_Fit, M1_Resid, colour =Stream)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Stream Type")
+```
+### Figure 17
+```{r}
+png(filename="OneANOVAStreamResidual.png")
+ggplot(stream.df, aes(M1_Fit, M1_Resid, colour =Stream)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Stream Type")
+dev.off()
+
+```
+
+Interaction Plot
+-----------------
+```{r}
+lineplot.CI(STREAMTYPE,V72, data =fish, cex = 1.5,
+            xlab = "Season", ylab = "means", cex.lab = 1.2, x.leg = 1,
+             pch = c(16,16))
+```
+### Figure 18
+```{r}
+png(filename="OneANOVAStreamInteraction.png")
+lineplot.CI(STREAMTYPE,V72, data =fish, cex = 1.5,
+            xlab = "Season", ylab = "means", cex.lab = 1.2, x.leg = 1,
+             pch = c(16,16))
+dev.off()
+
+```
+
+One-Way ANOVA On Season
+========================================================
+
+Now lets look at a One-way ANOVA on season
+
+```{r}
+options(contrasts = c("contr.sum","contr.poly")) 
+season <- lm(V72 ~  SEASNUM, data=fish) 
+```
+
+```{r}
+layout(matrix(c(1,2,3,4),2,2))
+plot(season)
+```
+### Figure 19
+```{r}
+png(filename="OneANOVA.png")
+layout(matrix(c(1,2,3,4),2,2))
+plot(season)
+dev.off()
+```
+
+### Table 3
+```{r}
+print(anova(season))
+
+```
+
+
+Residual Plot
+-----------------
+```{r}
+season.df <- data.frame(M1_Fit = seq(0,0, length=150), 
+                        M1_Resid = seq(0,0, length=150),
+                        Season = seq(0,0, length=150))
+
+season.resid = resid(season)
+season.fitted = fitted(season)
+
+season.df$M1_Fit = season.fitted
+season.df$M1_Resid = season.resid
+season.df$Season = fish$SEASNUM
+
+ggplot(season.df, aes(M1_Fit, M1_Resid, colour =Season)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Season")
+```
+### Figure 20
+```{r}
+png(filename="OneANOVASeasonResidual.png")
+ggplot(season.df, aes(M1_Fit, M1_Resid, colour =Season)) + geom_point() +
+  xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residuals of One-Way Anova on Season")
+
+dev.off()
+
+
+```
+
+
+Interaction Plot
+-------------------
+```{r}
+lineplot.CI(SEASNUM,V72, data =fish, cex = 1.5,
+            xlab = "Season", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            pch = c(16,16))
+```
+### Figure 21
+```{r}
+png(filename="OneANOVASeasonInteraction.png")
+lineplot.CI(SEASNUM,V72, data =fish, cex = 1.5,
+            xlab = "Season", ylab = "means", cex.lab = 1.2, x.leg = 1,
+            pch = c(16,16))
+dev.off()
+
+```

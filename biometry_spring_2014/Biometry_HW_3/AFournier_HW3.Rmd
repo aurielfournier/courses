@@ -1,0 +1,91 @@
+# Biometry Homework # 3
+# Auriel Fournier
+# Spring 2014
+# Multiple Regression
+```{r, fig.width=13, fig.height=10}
+library(Hmisc) #for the correlation stuff
+library(AICcmodavg)#for AIC ranking
+library(ggplot2) #for graphing
+library(reshape) #for reshaping/melting 
+
+setwd("C:/Users/avanderlaar/Dropbox/R/Biometry_HW_3")
+hw3 = read.csv("biometryhw3.csv", header=T)
+
+#subset just what we are interested in
+hw3 = subset(hw3, hw3$stream=="Bear"|hw3$stream=="Cave"|hw3$stream=="Falling")
+#subset just what we want, ignoring columns with missing data
+hw3 = subset(hw3, select=c("depth","substrate","velocity","totdenarea"))
+
+#visual examination
+#puts the data into long form, instead of wide form
+mel = melt(hw3)
+
+#assumption of homogeneity of variance
+ggplot()+  geom_boxplot(data=mel, aes(x=variable, y=value, fill=variable))
+
+#assumption of normality
+ggplot() +  geom_histogram(data=mel, aes(x=value, fill=variable), position=position_dodge()) +facet_wrap(~variable, scales="free")
+
+
+# depth is a litle skewed
+#substrate, looks alright
+#totdenarea is skewed
+#velocity is skewed
+
+hw3nr = subset(hw3, select=c("depth","velocity","substrate"))
+hw3nr = scale(hw3nr,center=T,scale=T)
+hw3nr = data.frame(hw3nr)
+
+mels = melt(hw3nr)
+
+ggplot() +  geom_histogram(data=mels, aes(x=value, fill=variable), position=position_dodge()) +facet_wrap(~variable,scales="free")
+ggplot()+  geom_boxplot(data=mels, aes(x=variable, y=value, fill=variable))
+
+#transform to get close to a normal distribution
+hw3nr$velocity2 = abs(hw3nr$velocity)^(1/2)
+
+hw3nr = subset(hw3nr, select=c("depth","velocity2","substrate"))
+melts = melt(hw3nr)
+
+#look at everything again
+ggplot() +  geom_histogram(data=melts, aes(x=value, fill=variable), position=position_dodge()) +facet_wrap(~variable,scales="free")
+ggplot()+  geom_boxplot(data=melts, aes(x=variable, y=value, fill=variable))
+
+
+hw3nr$totdenarea2 = hw3$totdenarea^(1/2)
+
+
+#pearson's correlation 
+cor = rcorr(as.matrix(hw3nr), type="pearson")
+
+#because of the correlation we will keep these
+#depth
+#velocity2
+
+#subset just what we are actually going to use
+hw3f = subset(hw3nr, select=c("depth","velocity2","totdenarea2"))
+
+#candidate models put into a list
+cand.mod = list()
+cand.mod[[1]] = lm(totdenarea2 ~ depth+velocity2, data=hw3f)
+cand.mod[[2]] = lm(totdenarea2 ~ depth,  data=hw3f)
+cand.mod[[3]] = lm(totdenarea2 ~ velocity2, data=hw3f)
+
+
+#list of the names for the models
+names = c("model 1", "model 2", "model 3")
+
+#generates AIC table
+aictab(cand.mod, names, sort=T)   
+
+#look in more detail at the top three models
+summary(cand.mod[[3]]) # nothing is significant, and the R^2 is .01836
+summary(cand.mod[[2]]) # none are significant,  R^2 =.007
+summary(cand.mod[[1]]) # none are significant, R^2 = 0.02
+
+par(mfrow=c(3,4))
+plot(cand.mod[[3]]) # 
+plot(cand.mod[[2]]) #
+plot(cand.mod[[1]]) #
+
+```

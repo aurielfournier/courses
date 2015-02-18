@@ -1,0 +1,61 @@
+# Biometry Final 2014 - Question 1
+```{r}
+ 
+#Biometry Final 2014 - Question 1 
+
+#required libraries
+library(ggplot2)
+library(devtools)
+library(digest)
+library(gridExtra)
+
+#set working directory
+setwd("~/Downloads")
+data1 = read.csv("final_q1.csv",header=T)
+
+plot(data1)
+
+#box plots to look at distribution of variances
+ggplot()+  geom_boxplot(data=data1, aes(x=state, y=cholesterol, fill=state))
+#these are similar
+
+par(mfrow=c(1,2))
+hist(data1$age) #nicely normally distributed
+hist(data1$cholesterol) #slightly skewed to the left
+data1$chol2 = data1$cholesterol^(1/2)
+hist(data1$chol2) #this is a better distribtuion
+data1 = data1[,c("chol2","state","age")]
+
+#this is just a one way anova to look at the difference between longevity and mating partner treatment
+lm1 = lm(data=data1, chol2~state)
+summary(lm1) #there is not a difference between state and cholesterol level
+#look at residuals
+par(mfrow=c(2,2))
+plot(lm1)
+#the residuals dont' look bad, there is slight deivation from the normal QQ plot
+
+
+lm2 = lm(data=data1, age~state)
+summary(lm2) # this is not significant, so state of origin do not explain age, shocking stuff
+
+
+#linearity assumptions
+ggplot()+
+  geom_point(data=data1, aes(x=chol2, y=age, group=state, colour=state))
+
+#ancova looking at the impact of mating partner treatment and thorax lenght on longetivy 
+lm3 = lm(data=data1, chol2 ~ age+state)
+summary(lm3) # there is a significant difference by age, but not by state
+
+
+#check for paralell slopes
+lm4 = lm(data=data1, chol2~ age*state )
+summary(lm4) #age is significant, but there is not a signficant interaction
+
+#so we can go back to lm1, which was a regular ANOVA, but there was also not a difference there
+#this suggests that there is no relationship between state and cholesterol level, but there is one with age, which is increasing in both cases. 
+
+
+
+```
+
